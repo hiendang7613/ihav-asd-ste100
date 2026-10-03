@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.0 — 2026-10-04
 The checker now enforces three rules that the skill already states. The reply rules do not change.
 - The Conclusion line must be one sentence. A Latin stop followed by a capital letter, or a CJK stop followed by more text, starts a new sentence. Abbreviations such as `e.g.`, `i.e.` and `vs.`, versions, file names and inline code after a stop do not.
 - Top-level Result-Zone bullets must start with a bold key or a code path. Nested bullets are not checked.
