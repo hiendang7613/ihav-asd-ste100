@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.17.0" src="https://img.shields.io/badge/version-0.17.0-4F46E5">
+  <img alt="Version 0.18.0" src="https://img.shields.io/badge/version-0.18.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
@@ -253,6 +253,7 @@ Both are MIT. They agree on more than they differ; pick the one that matches you
 3. **Your words win:** `stop ste mode` pauses it for the session; `ste mode` resumes it.
 4. **Exact output wins:** code-only, JSON-only and single-command requests are never wrapped.
 5. **Safe by design:** the hooks never block a session, make no network call, and stay silent on any error.
+6. **New releases reach open sessions:** `hooks/ste-mode.mjs` is a stable launcher. On each event it runs the release named in `~/.ihav/active/ihav-asd-ste100.json`, if that release sits in the ihav plugin cache, and its own copy otherwise. After installing a release, run `node <its cache folder>/scripts/activate.mjs`: a smoke run checks it, then the next prompt in every open session gets the new rules once. `--rollback` returns to the previous release.
 
 ## Cost
 

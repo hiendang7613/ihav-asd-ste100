@@ -7,7 +7,7 @@ Map for agents working on this repository. The behavior lives in `skills/ihav-as
 | Canonical rules | `skills/ihav-asd-ste100/SKILL.md` | The only source of truth for the reply rules. Change it first. |
 | Claude Code | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | Plugin and local marketplace manifests. |
 | Codex | `.codex-plugin/plugin.json` | Codex manifest; skills from `./skills/`. |
-| Hooks | `hooks/hooks.json`, `hooks/ste-mode.mjs` | On by default after install (opt-out file or `IHAV_ASD_STE100=off`): SessionStart injects the skill; UserPromptSubmit adds a one-line reminder with the local time and handles "stop ste mode" / "ste mode"; PostToolBatch (Claude Code) adds the local time after each batch of tool calls, for the Agents-Zone step times. |
+| Hooks | `hooks/hooks.json`, `hooks/ste-mode.mjs` (stable launcher), `hooks/ste-core.mjs`, `hooks/active.mjs`, `scripts/activate.mjs` | The launcher runs the release named in `~/.ihav/active/ihav-asd-ste100.json` when it sits in the ihav plugin cache, else its own copy; keep `hooks.json` and the launcher stable. On by default after install (opt-out file or `IHAV_ASD_STE100=off`): SessionStart injects the skill; UserPromptSubmit adds a one-line reminder with the local time and handles "stop ste mode" / "ste mode"; PostToolBatch (Claude Code) adds the local time after each batch of tool calls, for the Agents-Zone step times. |
 | Offline checker | `scripts/check_reply.py` | Counts shape, line and sentence length, openers and closers. No model call. |
 | Evals | `evals/` (local only, not in the repository) | Suite for `claude plugin eval`. Running it calls paid models. |
 | Examples | `examples/` | Before and after replies used by the README and the tests. |

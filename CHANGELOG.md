@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.0 — 2026-10-04
+New releases reach open Claude Code sessions without `/reload-plugins`. The reply rules do not change.
+- `hooks/ste-mode.mjs` is now a stable launcher, and the hook logic moves to `hooks/ste-core.mjs`. The launcher runs the release named in `$IHAV_HOME/active/ihav-asd-ste100.json` (default `~/.ihav`), the same pointer format that ihav-agent-room uses. It runs that release only when the pointer is a regular file owned by the user, is not writable by group or others, has `launcher_protocol` 1, and names a root inside `<config dir>/plugins/cache/ihav/ihav-asd-ste100/` whose real path holds `hooks/ste-core.mjs`. Any failed check or a broken release falls back to the launcher's own copy.
+- When a session's active version changes, its next prompt receives the new skill body once, marked "STE REPLY RULES UPDATED".
+- `scripts/activate.mjs` smoke-runs a release in a throwaway config directory, then writes the pointer atomically with the previous release. `--rollback` and `--status` are supported.
+- `hooks/hooks.json` does not change. Claude Code's `reloadSkills` hook field is not used: its documentation covers SessionStart skill discovery only, and these rules arrive through hook context, not the skill loader.
+- Limit: sessions still running 0.17.0 or older have no launcher, so this release itself needs one last `/reload-plugins` or a new session.
+
 ## 0.17.0 — 2026-10-04
 **Breaking for Goals:** the progress bar moves from G lines to L lines, chosen by the first user.
 - An L line opens with the agent's estimate and a ten-character bar, then a pipe and the aim: `**L1.** [~80%] [########--] | aim`. The `~` marks the percent as an estimate; the bar has one `#` per 10 percent. These are the only square brackets the rules allow.
