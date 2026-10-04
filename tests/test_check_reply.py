@@ -284,6 +284,16 @@ class StyleTests(unittest.TestCase):
         self.assertTrue(report["ok"])
         self.assertTrue(any("Long sentence (30 words)" in w for w in report["warnings"]))
 
+    def test_adminzone_reply_has_the_admin_zone_alone(self):
+        admin_only = FULL[FULL.index("**Admin-Zone**"):]
+        self.assertTrue(check(admin_only)["ok"], check(admin_only))
+        partial = FULL[:FULL.index("**Result-Zone**")] + admin_only
+        self.assertTrue(any("three zone labels" in v for v in check(partial)["violations"]))
+        preface = "**Status:** see below.\n\n" + admin_only
+        self.assertTrue(any("Admin-Zone-only" in v for v in check(preface)["violations"]))
+        no_blank = admin_only.replace("**Admin-Zone**\n\n", "**Admin-Zone**\n")
+        self.assertTrue(any("blank line after" in v for v in check(no_blank)["violations"]))
+
     def test_conclusion_is_one_sentence(self):
         two = FULL.replace("cause not checked.", "cause not checked. Deploy waits for CI.")
         self.assertTrue(any("2 sentences" in v for v in check(two)["violations"]))

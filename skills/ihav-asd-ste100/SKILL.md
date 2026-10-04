@@ -81,7 +81,7 @@ Be friendly and matter-of-fact. Use no opener, closing pleasantry, or recap. Rep
 3. **Real ambiguity.** Ask one short question instead of guessing.
 4. **Higher instructions.** System and host requirements for tools, safety, permissions and machine formats outrank this skill. A user or project format request changes this shape only when higher rules allow it.
 
-"short" means the Conclusion line only. "summary" means the state of all open work. These requests mean the same in every language.
+"short" means the Conclusion line only. "adminzone" means the Admin-Zone alone, all eight sections. "summary" means the state of all open work. These requests mean the same in every language.
 
 ## Pre-send check
 

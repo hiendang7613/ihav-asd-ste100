@@ -241,12 +241,20 @@ def mask_code(text):
 
 def zone_problems(text):
     """The full format has three labelled zones: Agents-Zone (one line per step: `4:43 PM` why => what),
-    Result-Zone (the key-first body) and Admin-Zone (the Conclusion and the eight sections)."""
+    Result-Zone (the key-first body) and Admin-Zone (the Conclusion and the eight sections).
+    An "adminzone" reply has the Admin-Zone alone."""
     lines = mask_code(text).splitlines()
     zones = [(index, ZONE_LINE.match(line).group(1)) for index, line in enumerate(lines) if ZONE_LINE.match(line)]
-    if [name for _, name in zones] != list(ZONES):
+    if [name for _, name in zones] == ["Admin-Zone"]:
+        # "adminzone" asks for the Admin-Zone alone: its label, the Conclusion line and the eight sections.
+        if any(line.strip() for line in lines[:zones[0][0]]):
+            return ["An Admin-Zone-only reply starts with **Admin-Zone**; a full reply has all three zones."]
+        agents = result = admin = zones[0][0]
+    elif [name for _, name in zones] != list(ZONES):
         return ["Write the three zone labels once each, in order, on their own lines: **Agents-Zone**, "
                 "**Result-Zone**, **Admin-Zone**."]
+    else:
+        agents, result, admin = (index for index, _ in zones)
     problems = []
     for index, name in zones:
         if index > 0 and lines[index - 1].strip():
@@ -254,7 +262,6 @@ def zone_problems(text):
         following = lines[index + 1] if index + 1 < len(lines) else ""
         if following.strip() and not re.match(r"\s*(?:[-*]|\d+\.)\s", following):
             problems.append("After **%s**, start a list or leave a blank line; plain text would join the label." % name)
-    agents, result, admin = (index for index, _ in zones)
     for line in (line for line in lines[agents + 1:result] if line.strip()):
         if not STEP_LINE.match(line) or (TIME_LIKE.match(line) and not STEP_TIME.match(line)):
             problems.append("Agents-Zone lines are '- `4:43 PM` why => what' (time only from a real clock): %s" % line[:40])

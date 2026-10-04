@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.14.0 — 2026-10-04
+- New short form, chosen by the first user: "adminzone" asks for the Admin-Zone alone, with the Conclusion line and all eight sections. The checker accepts a reply that starts with **Admin-Zone** and has no other zone.
+
 ## 0.13.0 — 2026-10-04
 The checker now enforces three rules that the skill already states. The reply rules do not change.
 - The Conclusion line must be one sentence. A Latin stop followed by a capital letter, or a CJK stop followed by more text, starts a new sentence. Abbreviations such as `e.g.`, `i.e.` and `vs.`, versions, file names and inline code after a stop do not.
