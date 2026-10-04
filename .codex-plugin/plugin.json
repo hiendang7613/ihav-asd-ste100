@@ -1,6 +1,6 @@
 {
   "name": "ihav-asd-ste100",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Short, plain, predictable replies in any language: key-first bullets, a one-sentence Conclusion, then eight fixed status sections. Rules adapted from ASD-STE100 principles.",
   "author": {
     "name": "hiendang7613"
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "I Have ASD-STE100",
     "shortDescription": "Plain, predictable replies with a closing conclusion block",
-    "longDescription": "Shape Codex replies: key-first bullets, then a one-sentence conclusion and numbered sections (0.Done, 1.InProgress, 2.Pending, 3.Questions, 4.Todos, 5.Backlog, 6.Risks, 7.AIIdeas) whose items start with a bold key, so a reader can trust them on their own.",
+    "longDescription": "Shape Codex replies: key-first bullets, then a one-sentence conclusion and numbered sections (0.Goals, 1.Done, 2.Doing, 3.Todos, 4.Pending, 5.Quests, 6.Risks, 7.Ideas) whose items start with a bold key, so a reader can trust them on their own.",
     "developerName": "hiendang7613",
     "category": "Productivity",
     "capabilities": [

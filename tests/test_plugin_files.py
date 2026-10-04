@@ -44,20 +44,21 @@ class SkillTests(unittest.TestCase):
         self.assertIn("disable-model-invocation: true", self.front)
 
     def test_skill_stays_small_because_always_on_injects_it_every_session(self):
-        # 6,900 bytes (6,500 until 0.11.0): the admin's three zones and the clock rule cost about 100 tokens per session start.
-        self.assertLessEqual(len(self.text.encode()), 6900)
+        # 7,100 bytes (6,900 until 0.15.0, 6,500 until 0.11.0): the Goals section with L, G and B lines costs about
+        # 50 more tokens per session start than the old eight sections.
+        self.assertLessEqual(len(self.text.encode()), 7100)
 
     def test_required_sections_and_the_numbered_conclusion_part(self):
         for heading in ("## Persistence", "## The shape", "## Format for fast reading", "## Sentences", "## Protect meaning",
                         "## Tone", "## When to break the rules", "## Pre-send check"):
             self.assertIn(heading, self.text)
-        positions = [self.text.index(label) for label in ("`**Conclusion:**`", "0. **Done:**", "1. **InProgress:**",
-                                                          "2. **Pending:**", "3. **Questions:**", "4. **Todos:**",
-                                                          "5. **Backlog:**", "6. **Risks:**", "7. **AIIdeas:**")]
+        positions = [self.text.index(label) for label in ("`**Conclusion:**`", "0. **Goals:**", "1. **Done:**",
+                                                          "2. **Doing:**", "3. **Todos:**", "4. **Pending:**",
+                                                          "5. **Quests:**", "6. **Risks:**", "7. **Ideas:**")]
         self.assertEqual(positions, sorted(positions))
         self.assertIn("`<a>`", self.text)
         self.assertIn("Keep labels exactly as shown in English", self.text)
-        self.assertIn("empty sections show only their label with no text after it", self.text)
+        self.assertIn("an empty section shows only its label", self.text)
         self.assertIn("Never put text on a section-label line", self.text)
         self.assertIn("starting with a bold key", self.text)
         self.assertIn("An empty Risks label means you checked and found none", self.text)
@@ -67,7 +68,8 @@ class SkillTests(unittest.TestCase):
         self.assertIn("Never omit a failure, material finding or requested detail", self.text)
         self.assertIn("Count passes; list each failure", self.text)
         for rule in ("Open with the answer or blocker", "Give each item one home",
-                     "Move accepted work to Todos and deferred work to Backlog", "add no new fact or evidence list",
+                     "deferred work as B lines", "Only the user sets L lines, with no percent",
+                     "`round(10 * done / total)` filled, or \"no plan yet\"", "add no new fact or evidence list",
                      "Body, status and question text follow the user's latest language",
                      "A user or project format request changes this shape only when higher rules allow it"):
             self.assertIn(rule, self.text)

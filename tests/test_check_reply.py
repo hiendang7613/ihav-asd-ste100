@@ -18,24 +18,26 @@ FULL = """**Agents-Zone**
 
 **Conclusion:** Login is fixed; one payment test still fails, cause not checked.
 
-0. **Done:**
+0. **Goals:**
+   - **L1.** Users can log in from every client.
+   - **G1.** Fix the login test -> L1 `########--` 4/5
+   - **B1.** Update the login guide later.
+1. **Done:**
    - **Login fix:** merged.
-1. **InProgress:**
+2. **Doing:**
    - **CI:** reruns the full suite.
-2. **Pending:**
+3. **Todos:**
+   - **Payment test:** check `payment.spec.ts:88`.
+4. **Pending:**
    - **Review:** waiting for the other agent.
-3. **Questions:**
+5. **Quests:**
    - **Q1.** Approve: deploy to production?
      - `<a>` After CI passes.
      - (b) Now.
-4. **Todos:**
-   - **Payment test:** check `payment.spec.ts:88`.
-5. **Backlog:**
-   - **Docs:** update the login guide later.
 6. **Risks:**
    - **R1.** `jsonwebtoken` 8.5.1 is older than the 9.0.0 security release.
      - `<a>` update it in a separate change | (b) skip | (c) later
-7. **AIIdeas:**
+7. **Ideas:**
    - **I1.** Add a test for the `Authorization` header.
      - `<a>` plan it | (b) skip | (c) later
 """
@@ -59,28 +61,28 @@ class ShapeTests(unittest.TestCase):
         alone = ("**Agents-Zone**\n\n**Result-Zone**\n- **Rename:** done.\n\n**Admin-Zone**\n\n"
                  "**Conclusion:** The file is renamed.\n")
         self.assertTrue(any("must be shown" in v for v in check(alone)["violations"]))
-        labels = ["Done", "InProgress", "Pending", "Questions", "Todos", "Backlog", "Risks", "AIIdeas"]
+        labels = ["Goals", "Done", "Doing", "Todos", "Pending", "Quests", "Risks", "Ideas"]
         minimal = alone + "\n" + "\n".join("%d. **%s:**" % (n, label) for n, label in enumerate(labels)) + "\n"
         self.assertTrue(check(minimal)["ok"], check(minimal))
-        no_pending = FULL.replace("2. **Pending:**\n   - **Review:** waiting for the other agent.\n", "")
+        no_pending = FULL.replace("2. **Doing:**\n   - **CI:** reruns the full suite.\n", "")
         self.assertNotEqual(no_pending, FULL)
         self.assertTrue(any("2 must be shown" in v for v in check(no_pending)["violations"]))
-        empty = FULL.replace("1. **InProgress:**\n   - **CI:** reruns the full suite.", "1. **InProgress:**")
+        empty = FULL.replace("2. **Doing:**\n   - **CI:** reruns the full suite.", "2. **Doing:**")
         self.assertNotEqual(empty, FULL)
         self.assertTrue(check(empty)["ok"], check(empty))
-        filler = empty.replace("1. **InProgress:**", "1. **InProgress:** None")
+        filler = empty.replace("2. **Doing:**", "2. **Doing:** None")
         self.assertTrue(any("show its label only" in v for v in check(filler)["violations"]))
 
     def test_items_are_sub_items_that_start_with_a_bold_key(self):
-        inline = FULL.replace("0. **Done:**\n   - **Login fix:** merged.", "0. **Done:** Login fix merged.")
+        inline = FULL.replace("1. **Done:**\n   - **Login fix:** merged.", "1. **Done:** Login fix merged.")
         self.assertNotEqual(inline, FULL)
-        self.assertTrue(any("Section 0 must show its label only" in v for v in check(inline)["violations"]))
+        self.assertTrue(any("Section 1 must show its label only" in v for v in check(inline)["violations"]))
         plain = FULL.replace("   - **Payment test:** check", "   - Check")
         self.assertNotEqual(plain, FULL)
-        self.assertTrue(any("Section 4 item must start with **Key:**" in v for v in check(plain)["violations"]))
+        self.assertTrue(any("Section 3 item must start with **Key:**" in v for v in check(plain)["violations"]))
         unnumbered = FULL.replace("   - **Q1.** Approve:", "   - Approve:")
         self.assertNotEqual(unnumbered, FULL)
-        self.assertTrue(any("Section 3 item must start with **Q1.**" in v for v in check(unnumbered)["violations"]))
+        self.assertTrue(any("Section 5 item must start with **Q1.**" in v for v in check(unnumbered)["violations"]))
         detail = FULL.replace("   - **CI:** reruns the full suite.", "   - **CI:** reruns the full suite.\n     - job 812, about 9 minutes left")
         self.assertNotEqual(detail, FULL)
         self.assertTrue(check(detail)["ok"], check(detail))
@@ -90,17 +92,17 @@ class ShapeTests(unittest.TestCase):
         self.assertTrue(check('```json\n{"status": "ok", "count": 3}\n```')["ok"])
 
     def test_sections_out_of_order_repeated_or_out_of_range_fail(self):
-        swapped = FULL.replace("3. **Questions:**", "9. **Questions:**").replace("2. **Pending:**", "3. **Pending:**").replace("9. **Questions:**", "2. **Questions:**")
+        swapped = FULL.replace("3. **Todos:**", "9. **Todos:**").replace("2. **Doing:**", "3. **Doing:**").replace("9. **Todos:**", "2. **Todos:**")
         self.assertNotEqual(swapped, FULL)
         self.assertFalse(check(swapped)["ok"])
-        self.assertFalse(check(FULL.replace("7. **AIIdeas:**", "8. **AIIdeas:**"))["ok"])
-        self.assertFalse(check(FULL.replace("1. **InProgress:**", "0. **InProgress:**"))["ok"])
+        self.assertFalse(check(FULL.replace("7. **Ideas:**", "8. **Ideas:**"))["ok"])
+        self.assertFalse(check(FULL.replace("2. **Doing:**", "1. **Doing:**"))["ok"])
 
     def test_one_blank_line_after_the_conclusion_and_none_between_sections(self):
         glued = FULL.replace("cause not checked.\n\n0.", "cause not checked.\n0.")
         self.assertNotEqual(glued, FULL)
         self.assertTrue(any("blank line between the Conclusion line" in v for v in check(glued)["violations"]))
-        loose = FULL.replace("\n4. **Todos:**", "\n\n4. **Todos:**")
+        loose = FULL.replace("\n4. **Pending:**", "\n\n4. **Pending:**")
         self.assertNotEqual(loose, FULL)
         self.assertTrue(any("without blank lines" in v for v in check(loose)["violations"]))
 
@@ -149,7 +151,7 @@ class ShapeTests(unittest.TestCase):
         prose = FULL.replace("**Result-Zone**\n- **Fix:**", "**Result-Zone**\nThe fix: ")
         self.assertNotEqual(prose, FULL)
         self.assertTrue(any("start a list or leave a blank line" in v for v in check(prose)["violations"]))
-        late = FULL.replace("\n\n**Admin-Zone**\n\n**Conclusion:**", "\n\n**Conclusion:**").replace("\n0. **Done:**", "\n**Admin-Zone**\n\n0. **Done:**", 1)
+        late = FULL.replace("\n\n**Admin-Zone**\n\n**Conclusion:**", "\n\n**Conclusion:**").replace("\n0. **Goals:**", "\n**Admin-Zone**\n\n0. **Goals:**", 1)
         self.assertFalse(check(late)["ok"])
         extra = FULL.replace("**Admin-Zone**\n\n**Conclusion:**", "**Admin-Zone**\n\n- **Note:** one more fact.\n\n**Conclusion:**")
         self.assertNotEqual(extra, FULL)
@@ -195,12 +197,12 @@ class ShapeTests(unittest.TestCase):
         self.assertTrue(check(open_question)["ok"], check(open_question))
 
     def test_an_item_listed_in_two_sections_is_warned(self):
-        twice = FULL.replace("5. **Backlog:**\n   - **Docs:** update the login guide later.",
-                             "5. **Backlog:**\n   - **Payment test:** check it again next week.")
+        twice = FULL.replace("4. **Pending:**\n   - **Review:** waiting for the other agent.",
+                             "4. **Pending:**\n   - **Payment test:** waiting for the other agent.")
         self.assertNotEqual(twice, FULL)
         report = check(twice)
         self.assertTrue(report["ok"], report)
-        self.assertTrue(any("'payment test' appears in sections 4 and 5" in w for w in report["warnings"]), report["warnings"])
+        self.assertTrue(any("'payment test' appears in sections 3 and 4" in w for w in report["warnings"]), report["warnings"])
         self.assertFalse(any("appears in sections" in w for w in check(FULL)["warnings"]))
         nested = FULL.replace("   - **CI:** reruns the full suite.", "   - **CI:** reruns the full suite.\n     - **Payment test:** included in this run.")
         self.assertNotEqual(nested, FULL)
@@ -213,7 +215,7 @@ class ShapeTests(unittest.TestCase):
     def test_structural_markers_use_ascii_digits_and_colons(self):
         variants = (
             FULL.replace("**Conclusion:**", "**Conclusion：**"),
-            FULL.replace("0. **Done:**", "٠. **Done:**"),
+            FULL.replace("1. **Done:**", "١. **Done:**"),
             FULL.replace("**Payment test:**", "**Payment test：**"),
             FULL.replace("**Q1.**", "**Q١.**"),
         )
@@ -236,7 +238,7 @@ class ShapeTests(unittest.TestCase):
         self.assertTrue(any("more than one Conclusion" in violation for violation in report["violations"]), report)
 
     def test_attempted_section_format_cannot_use_the_small_answer_exception(self):
-        labels = ["Done", "InProgress", "Pending", "Questions", "Todos", "Backlog", "Risks", "AIIdeas"]
+        labels = ["Goals", "Done", "Doing", "Todos", "Pending", "Quests", "Risks", "Ideas"]
         no_conclusion = "Renamed.\n\n" + "\n".join(
             "%d. **%s:**" % (number, label) for number, label in enumerate(labels)
         )
@@ -260,7 +262,7 @@ class StyleTests(unittest.TestCase):
     def test_emoji_and_square_brackets_fail_but_code_spans_may_hold_anything(self):
         self.assertFalse(check(FULL.replace("**Login fix:** merged.", "**Login fix:** merged ✅"))["ok"])
         self.assertFalse(check(FULL.replace("**Conclusion:**", "\U0001F3AF **Conclusion:**"))["ok"])
-        self.assertFalse(check(FULL.replace("0. **Done:**", "0. **[Done]:**"))["ok"])
+        self.assertFalse(check(FULL.replace("1. **Done:**", "1. **[Done]:**"))["ok"])
         bracket_body = FULL.replace("- **Fix:**", "- **[Fix]:**")
         self.assertNotEqual(bracket_body, FULL)
         self.assertTrue(any("square brackets" in v for v in check(bracket_body)["violations"]))
@@ -283,6 +285,40 @@ class StyleTests(unittest.TestCase):
         report = check(long_body)
         self.assertTrue(report["ok"])
         self.assertTrue(any("Long sentence (30 words)" in w for w in report["warnings"]))
+
+    def test_goals_list_aims_current_goals_with_a_bar_and_deferred_work(self):
+        G1 = "   - **G1.** Fix the login test -> L1 `########--` 4/5"
+        for bad, message in (("`#######---` 4/5", "bar must be ########--"), ("`########--` 6/5", "6 of 5 steps"),
+                             ("`----------` 0/0", "0 of 0 steps"), ("`##-#######` 4/5", "bar must be"),
+                             ("`########` 4/5", "ends with a bar"), ("", "ends with a bar")):
+            with self.subTest(bar=bad):
+                text = FULL.replace(G1, G1.replace("`########--` 4/5", bad).rstrip())
+                self.assertNotEqual(text, FULL)
+                self.assertTrue(any(message in v for v in check(text)["violations"]), check(text)["violations"])
+        for good in ("`#####-----` 1/2", "`###-------` 1/4", "`##--------` 1/4", "no plan yet", "no plan yet."):
+            with self.subTest(bar=good):
+                text = FULL.replace("`########--` 4/5", good)
+                self.assertTrue(check(text)["ok"], check(text))
+        missing = FULL.replace("-> L1 ", "")
+        self.assertTrue(any("must name the L line" in v for v in check(missing)["violations"]))
+        unknown = FULL.replace("-> L1", "-> L2")
+        self.assertTrue(any("names L2, which Goals does not show" in v for v in check(unknown)["violations"]))
+        second = FULL.replace("-> L1", "-> L1 -> L2")
+        self.assertTrue(any("names L2, which Goals does not show" in v for v in check(second)["violations"]))
+        two_aims = second.replace("   - **G1.**", "   - **L2.** Login stays fast.\n   - **G1.**")
+        self.assertTrue(check(two_aims)["ok"], check(two_aims))
+        no_aims = missing.replace("   - **L1.** Users can log in from every client.\n", "")
+        self.assertTrue(check(no_aims)["ok"], check(no_aims))
+        percent = FULL.replace("from every client.", "from every client, 80% done.")
+        self.assertTrue(any("no percent" in v for v in check(percent)["violations"]))
+        order = FULL.replace("   - **B1.** Update the login guide later.\n", "").replace(
+            "   - **L1.**", "   - **B1.** Update the login guide later.\n   - **L1.**")
+        self.assertTrue(any("L lines, then G lines, then B lines" in v for v in check(order)["violations"]))
+        keyed = FULL.replace("   - **B1.** Update", "   - **Docs:** Update")
+        self.assertTrue(any("Section 0 item must start with **L1.** or **G1.** or **B1.**" in v
+                            for v in check(keyed)["violations"]))
+        empty = FULL[:FULL.index("   - **L1.**")] + FULL[FULL.index("1. **Done:**"):]
+        self.assertTrue(check(empty)["ok"], check(empty))
 
     def test_adminzone_reply_has_the_admin_zone_alone(self):
         admin_only = FULL[FULL.index("**Admin-Zone**"):]

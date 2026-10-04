@@ -21,11 +21,17 @@ import json
 import re
 import sys
 
-SECTIONS = {0: "Done", 1: "InProgress", 2: "Pending", 3: "Questions", 4: "Todos", 5: "Backlog", 6: "Risks", 7: "AIIdeas"}
-QUESTIONS, RISKS, IDEAS = 3, 6, 7
-ID_KEYS = {QUESTIONS: "Q", RISKS: "R", IDEAS: "I"}  # decision lists: items are numbered **Q1.**, **R1.**, **I1.**
+SECTIONS = {0: "Goals", 1: "Done", 2: "Doing", 3: "Todos", 4: "Pending", 5: "Quests", 6: "Risks", 7: "Ideas"}
+GOALS, QUESTIONS, RISKS, IDEAS = 0, 5, 6, 7
+# Numbered lists: Goals items are **L1.** (long-term aim), **G1.** (current goal) and **B1.** (deferred work);
+# decision lists use **Q1.**, **R1.** and **I1.**.
+ID_KEYS = {GOALS: "LGB", QUESTIONS: "Q", RISKS: "R", IDEAS: "I"}
 MUST_CHOOSE = (RISKS, IDEAS)  # every risk and idea offers a choice
 ALWAYS_SHOWN = tuple(SECTIONS)  # every section is shown; an empty one shows only its label
+BAR_WIDTH = 10
+GOAL_BAR = re.compile(r"`([#-]{%d})` ([0-9]+)/([0-9]+)$" % BAR_WIDTH)
+NO_PLAN = "no plan yet"
+GOAL_TARGET = re.compile(r"->\s*L([0-9]+)\b")
 MAX_CONCLUSION_WORDS = 25
 MAX_SENTENCE_WORDS = 25
 BODY_WORD_BUDGET = 250
@@ -164,9 +170,9 @@ def split_reply(text):
 
 def item_problems(number, sub_items):
     """Each top-level item in a section starts with a bold key; in a decision list the key is its ID: **Q1.**, **R1.**, **I1.**"""
-    letter = ID_KEYS.get(number)
-    key = re.compile(r"^\*\*%s[0-9]+\.\*\*\s" % letter) if letter else BOLD_KEY
-    shown = "**%s1.**" % letter if letter else "**Key:**"
+    letters = ID_KEYS.get(number)
+    key = re.compile(r"^\*\*[%s][0-9]+\.\*\*\s" % letters) if letters else BOLD_KEY
+    shown = " or ".join("**%s1.**" % letter for letter in letters) if letters else "**Key:**"
     return ["Section %d item must start with %s: %s..." % (number, shown, item[:30])
             for item in (SUB_ITEM.match(line).group(1) for line in sub_items
                          if len(line) - len(line.lstrip()) <= 3) if not key.match(item)]
@@ -197,8 +203,8 @@ def question_problems(number, sub_items):
 
 def indentation_problems(number, sub_items):
     """Require three spaces for keyed section items and five for option markers."""
-    letter = ID_KEYS.get(number)
-    key = re.compile(r"^\*\*%s[0-9]+\.\*\*\s" % letter) if letter else BOLD_KEY
+    letters = ID_KEYS.get(number)
+    key = re.compile(r"^\*\*[%s][0-9]+\.\*\*\s" % letters) if letters else BOLD_KEY
     problems = []
     for line in sub_items:
         indent = len(line) - len(line.lstrip())
@@ -209,6 +215,47 @@ def indentation_problems(number, sub_items):
             problems.append("Top-level items in section %d must be indented exactly 3 spaces." % number)
         if OPTION_ITEM.match(item) and indent != 5:
             problems.append("Options in section %d must be indented exactly 5 spaces." % number)
+    return problems
+
+
+def goal_problems(sub_items):
+    """Goals lists L, then G, then B lines. Only the user sets L lines, and they carry no percent. A G line names an
+    L shown above when one exists, and ends with a bar of planned steps or "no plan yet"."""
+    problems, goals, order = [], [], []
+    for line in sub_items:
+        if len(line) - len(line.lstrip()) > 3:
+            continue
+        match = re.match(r"^\*\*([LGB])([0-9]+)\.\*\*\s+(.*)$", SUB_ITEM.match(line).group(1))
+        if match:
+            goals.append(match.groups())
+            order.append("LGB".index(match.group(1)))
+    if order != sorted(order):
+        problems.append("Goals lists L lines, then G lines, then B lines.")
+    aims = {number for letter, number, _ in goals if letter == "L"}
+    for letter, number, text in goals:
+        if letter == "L" and ("%" in text or GOAL_BAR.search(text.strip())):
+            problems.append("L%s is a long-term aim: no percent and no bar." % number)
+        if letter != "G":
+            continue
+        targets = GOAL_TARGET.findall(text)
+        if aims and not targets:
+            problems.append("G%s must name the L line it serves: -> L1." % number)
+        for target in (target for target in targets if target not in aims):
+            problems.append("G%s names L%s, which Goals does not show." % (number, target))
+        bar = GOAL_BAR.search(text.strip())
+        if not bar:
+            if not text.strip().rstrip(".").endswith(NO_PLAN):
+                problems.append("G%s ends with a bar such as `######----` 3/5, or \"%s\"." % (number, NO_PLAN))
+            continue
+        filled, done, total = bar.group(1).count("#"), int(bar.group(2)), int(bar.group(3))
+        if total == 0 or done > total:
+            problems.append("G%s counts %d of %d steps; use 0 to total, with total above 0." % (number, done, total))
+        else:
+            exact = BAR_WIDTH * done / total  # a half step may round either way
+            expected = int(exact + 0.5)
+            if bar.group(1) != "#" * filled + "-" * (BAR_WIDTH - filled) or filled not in (expected, round(exact)):
+                problems.append("G%s bar must be %s for %d/%d."
+                                % (number, "#" * expected + "-" * (BAR_WIDTH - expected), done, total))
     return problems
 
 
@@ -310,8 +357,10 @@ def check(text):
                                   "sub-item that starts with a bold key." % number)
             violations.extend(item_problems(number, subs))
             violations.extend(indentation_problems(number, subs))
-            if number in ID_KEYS:
+            if number in (QUESTIONS, RISKS, IDEAS):
                 violations.extend(question_problems(number, subs))
+            if number == GOALS:
+                violations.extend(goal_problems(subs))
         warnings.extend(duplicate_items(sections))
         violations.extend(zone_problems(text))
 

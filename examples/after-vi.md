@@ -11,20 +11,22 @@
 
 **Conclusion:** Test đăng nhập đã đạt; còn một test thanh toán lỗi, chưa kiểm tra nguyên nhân.
 
-0. **Done:**
+0. **Goals:**
+   - **L1.** Mọi client đều có thể đăng nhập.
+   - **G1.** Sửa đăng nhập cho client mới -> L1 `#######---` 2/3
+1. **Done:**
    - **Sửa đăng nhập:** `verifyToken` đọc đúng header; `npm test` chạy 214 test, 213 test đạt.
-1. **InProgress:**
-2. **Pending:**
-3. **Questions:**
+2. **Doing:**
+3. **Todos:**
+   - **Test thanh toán:** tìm nguyên nhân `payment.spec.ts:88` lỗi; tôi không sửa mã thanh toán.
+4. **Pending:**
+5. **Quests:**
    - **Q1.** Kiểm tra `payment.spec.ts:88` trước khi gộp thay đổi này?
      - `<a>` Có, kiểm tra ngay.
      - (b) Sau khi gộp.
-4. **Todos:**
-   - **Test thanh toán:** tìm nguyên nhân `payment.spec.ts:88` lỗi; tôi không sửa mã thanh toán.
-5. **Backlog:**
 6. **Risks:**
    - **R1.** `jsonwebtoken` 8.5.1 cũ hơn bản vá bảo mật 9.0.0.
      - `<a>` cập nhật trong một thay đổi riêng | (b) bỏ qua | (c) để sau
-7. **AIIdeas:**
+7. **Ideas:**
    - **I1.** Thêm test gửi `Authorization: Bearer <token>`, để lỗi này không quay lại.
      - `<a>` lên kế hoạch | (b) bỏ qua | (c) để sau

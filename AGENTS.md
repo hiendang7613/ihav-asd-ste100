@@ -16,7 +16,7 @@ Map for agents working on this repository. The behavior lives in `skills/ihav-as
 
 ## Rules for changes
 
-- Keep `SKILL.md` under 6,900 bytes: the SessionStart hook injects it into every session.
+- Keep `SKILL.md` under 7,100 bytes: the SessionStart hook injects it into every session.
 - Keep versions equal in both manifests.
 - Never add ASD-STE100 specification text or its dictionary. Paraphrase principles only.
 - Never create or delete the opt-out file in a real home directory as part of a change or a test.

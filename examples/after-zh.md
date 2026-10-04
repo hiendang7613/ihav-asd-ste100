@@ -11,20 +11,22 @@
 
 **Conclusion:** 登录测试已通过；一个支付测试仍然失败，原因未检查。
 
-0. **Done:**
+0. **Goals:**
+   - **L1.** 所有客户端都能登录。
+   - **G1.** 修复新客户端的登录 -> L1 `#######---` 2/3
+1. **Done:**
    - **登录修复:** `verifyToken` 读取正确的请求头；`npm test` 运行 214 个测试，213 个通过。
-1. **InProgress:**
-2. **Pending:**
-3. **Questions:**
+2. **Doing:**
+3. **Todos:**
+   - **支付测试:** 查明 `payment.spec.ts:88` 失败的原因；我没有修改支付代码。
+4. **Pending:**
+5. **Quests:**
    - **Q1.** 合并前先检查 `payment.spec.ts:88` 吗？
      - `<a>` 是，现在检查。
      - (b) 合并之后再检查。
-4. **Todos:**
-   - **支付测试:** 查明 `payment.spec.ts:88` 失败的原因；我没有修改支付代码。
-5. **Backlog:**
 6. **Risks:**
    - **R1.** `jsonwebtoken` 8.5.1 早于 9.0.0 安全更新版本。
      - `<a>` 另开一个变更来更新 | (b) 跳过 | (c) 以后再说
-7. **AIIdeas:**
+7. **Ideas:**
    - **I1.** 添加一个发送 `Authorization: Bearer <token>` 的测试，防止这个问题再次出现。
      - `<a>` 列入计划 | (b) 跳过 | (c) 以后再说

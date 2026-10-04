@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.15.0 — 2026-10-04
+**Breaking:** a new eight-section list with Goals first, chosen by the first user. Replies in the old shape fail the checker.
+
+| No. | Before | Now |
+| --- | --- | --- |
+| 0 | Done | Goals (new) |
+| 1 | InProgress | Done |
+| 2 | Pending | Doing (was InProgress) |
+| 3 | Questions | Todos |
+| 4 | Todos | Pending |
+| 5 | Backlog | Quests (was Questions) |
+| 6 | Risks | Risks |
+| 7 | AIIdeas | Ideas (was AIIdeas) |
+
+- Goals lists **L** lines, then **G** lines, then **B** lines. L lines are long-term aims that only the user sets; they carry no percent. A G line is a current goal. It names the L it serves (`-> L1`) when an L exists, and ends with a 10-character ASCII bar and a count, such as `` `#######---` 2/3 ``, with `round(10 * done / total)` marks over the agent's own planned steps, or with "no plan yet". B lines hold deferred work, which was the Backlog section.
+- The checker checks the bar arithmetic, `0 < total`, `done <= total`, the `-> Ln` target and the L, G, B order. It cannot check that the step counts are real. A `%` anywhere in an L line fails, and so does text after the count, such as a final period.
+- The skill size limit rises from 6,900 to 7,100 bytes, about 50 more tokens per session start. The prompt reminder lists the new sections.
+
 ## 0.14.0 — 2026-10-04
 - New short form, chosen by the first user: "adminzone" asks for the Admin-Zone alone, with the Conclusion line and all eight sections. The checker accepts a reply that starts with **Admin-Zone** and has no other zone.
 

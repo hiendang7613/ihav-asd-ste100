@@ -12,13 +12,13 @@
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.14.0" src="https://img.shields.io/badge/version-0.14.0-4F46E5">
+  <img alt="Version 0.15.0" src="https://img.shields.io/badge/version-0.15.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
 
 <p align="center">
-  <img src="./assets/hero.svg" alt="Left: a default agent reply as one long paragraph. Right: the same facts as key-first bullets, a one-sentence conclusion and numbered sections Done, Questions and Backlog." width="900" />
+  <img src="./assets/hero.svg" alt="Left: a default agent reply as one long paragraph. Right: the same facts as key-first bullets, a one-sentence conclusion and numbered sections Goals, Done, Doing, Todos, Pending, Quests, Risks and Ideas." width="900" />
 </p>
 
 <p align="center">
@@ -77,24 +77,26 @@ Every reply that has more than one fact has three zones, each under a bold label
 
 **Conclusion:** Login is fixed and on staging; one payment test still fails, cause not checked.
 
-0. **Done:**
+0. **Goals:**
+   - **L1.** Every client can log in.
+   - **G1.** Fix login for the new client -> L1 `#######---` 2/3
+   - **B1.** Update the login guide later.
+1. **Done:**
    - **Login fix:** `npm test` ran 214 tests and 213 pass.
-1. **InProgress:**
+2. **Doing:**
    - **CI:** reruns the full suite.
-2. **Pending:**
+3. **Todos:**
+   - **Payment test:** check `payment.spec.ts:88`.
+4. **Pending:**
    - **Review:** waiting for the other agent.
-3. **Questions:**
+5. **Quests:**
    - **Q1.** Approve: deploy the login fix to production?
      - `<a>` After CI passes.
      - (b) Now.
-4. **Todos:**
-   - **Payment test:** check `payment.spec.ts:88`.
-5. **Backlog:**
-   - **Docs:** update the login guide later.
 6. **Risks:**
    - **R1.** `jsonwebtoken` 8.5.1 is older than the 9.0.0 security release.
      - `<a>` update it in a separate change | (b) skip | (c) later
-7. **AIIdeas:**
+7. **Ideas:**
    - **I1.** Add a test for the `Authorization` header.
      - `<a>` plan it | (b) skip | (c) later
 
@@ -104,21 +106,22 @@ Every reply that has more than one fact has three zones, each under a bold label
 | **Result-Zone** | The answer or blocker first, then the facts and evidence as key-first bullets | The agent, already |
 | **Admin-Zone** | The Conclusion line and the eight sections below | You decide from here |
 | **Conclusion** | The result in one sentence. Bad news first: failure, skip, blocker, unverified work. | Nobody: it is the verdict |
-| `0. **Done:**` | Finished and checked work, with its evidence | The agent, already |
-| `1. **InProgress:**` | Work running now: builds, jobs, other agents | The agent or a tool, now |
-| `2. **Pending:**` | Work waiting for someone or something else | A third party |
-| `3. **Questions:**` | Everything that needs you: choices, and approvals that start with "Approve:" | You |
-| `4. **Todos:**` | Work in the current task the agent does next, in order | The agent, next |
-| `5. **Backlog:**` | Work deferred to later or optional, outside the current task | The agent, later |
+| `0. **Goals:**` | L lines: user-set long-term aims; G lines: current goals and planned-step progress; B lines: deferred or optional work | You set L; the agent tracks G and B |
+| `1. **Done:**` | Finished and checked work, with its evidence | The agent, already |
+| `2. **Doing:**` | Work running now: builds, jobs, other agents | The agent or a tool, now |
+| `3. **Todos:**` | Work in the current task the agent does next, in order | The agent, next |
+| `4. **Pending:**` | Work waiting for someone or something else | A third party |
+| `5. **Quests:**` | Everything that needs you: choices, and approvals that start with "Approve:" | You |
 | `6. **Risks:**` | Risks you should know, each **R1.** with a choice: fix, skip or later. Empty means the agent checked and found none | You |
-| `7. **AIIdeas:**` | Ideas the agent proposes, each **I1.** with a choice: plan, skip or later | You |
+| `7. **Ideas:**` | Ideas the agent proposes, each **I1.** with a choice: plan, skip or later | You |
 
 - **All eight sections, always, as one list from 0 to 7.** An empty one shows only its label, so you always see whether anything runs, waits or comes next. One blank line separates the list from the Conclusion line; none separates the sections. Each zone label sits on its own line after a blank line. You can answer "Q1 a, R1 c, I1 b" in one line.
+- **Goals:** list L, G, then B lines. Only the user sets a long-term aim, with no percentage. A current goal links to its aim with `-> L1`, if one exists. End it with a ten-character ASCII bar and done/total, such as `#######---` 2/3, or `no plan yet`. Fill `round(10 * done / total)` positions with `#`; use `-` for the rest.
 - **The recommended option** is written as `<a>` in code; the other options are (b), (c). You answer with one letter.
 - **Small answers stay small:** one fact, one sentence. Code-only, JSON-only and one-command requests get exactly that.
-- **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to Backlog.
+- **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to a B line in Goals.
 - **Items:** each one is a sub-item under its label that starts with a bold key, such as `   - **Login fix:** merged.` The label line itself stays bare.
-- **Empty section:** show only its numbered English label, for example `2. **Pending:**`.
+- **Empty section:** show only its numbered English label, for example `4. **Pending:**`.
 
 <a name="format"></a>
 
@@ -144,12 +147,12 @@ Task: *"The login test fails for the new client. Fix it and tell me where we are
 
 | | Default agent | [i-have-adhd](https://github.com/ayghri/i-have-adhd) | ihav-asd-ste100 |
 |---|---|---|---|
-| Words (markup not counted) | 166 | 82 | 143 |
+| Words (inline code counts as one) | 166 | 82 | 159 |
 | Longest sentence | 57 words | 18 words | 15 words |
-| Where the approval is | Mid-paragraph | First and last line ("Next:") | 3.Questions, as "Approve:" with options |
+| Where the approval is | Mid-paragraph | First and last line ("Next:") | 5.Quests, as "Approve:" with options |
 | The failing test in the summary | "probably unrelated" | Inside a numbered step | Conclusion line: "cause not checked" |
 
-The samples are illustrative: written by hand from each project's published rules, not generated by a model. The ihav-asd-ste100 count includes its four-line Agents-Zone step log.
+The samples are illustrative: written by hand from each project's published rules, not generated by a model. The counts exclude list markers and punctuation-only tokens, and count each inline code span as one word. The ihav-asd-ste100 count includes its four-line Agents-Zone step log and the Goals lines.
 
 <details>
 <summary><strong>Read the three replies</strong></summary>
@@ -186,28 +189,30 @@ The samples are illustrative: written by hand from each project's published rule
 >
 > **Conclusion:** Login is fixed and on staging; one payment test still fails, cause not checked.
 >
-> 0. **Done:**
+> 0. **Goals:**
+>    - **L1.** Every client can log in.
+>    - **G1.** Fix login for the new client -> L1 `#######---` 2/3
+> 1. **Done:**
 >    - **Login fix:** `npm test` ran 214 tests and 213 pass; staging is deployed.
-> 1. **InProgress:**
-> 2. **Pending:**
-> 3. **Questions:**
+> 2. **Doing:**
+> 3. **Todos:**
+>    - **Payment test:** find why `payment.spec.ts:88` fails; I did not change payment code.
+> 4. **Pending:**
+> 5. **Quests:**
 >    - **Q1.** Approve: deploy the login fix to production?
 >      - `<a>` Yes, after I check `payment.spec.ts:88`.
 >      - (b) Yes, now.
-> 4. **Todos:**
->    - **Payment test:** find why `payment.spec.ts:88` fails; I did not change payment code.
-> 5. **Backlog:**
 > 6. **Risks:**
 >    - **R1.** `jsonwebtoken` 8.5.1 is older than the 9.0.0 security release.
 >      - `<a>` update it after the deploy | (b) skip | (c) later
-> 7. **AIIdeas:**
+> 7. **Ideas:**
 
 Full files: [examples/compare/](examples/compare/).
 </details>
 
 **What it means for you:** i-have-adhd is the shortest and starts with the next action, which helps when the hard part is starting.
 ihav-asd-ste100 puts every decision in one numbered place, which helps when you review many agent reports in a row.
-The section numbers are the same in every language, so a script can find section 3 in any session log.
+The section numbers are the same in every language, so a script can find section 5 in any session log.
 
 <a name="languages"></a>
 
@@ -243,7 +248,7 @@ Both are MIT. They agree on more than they differ; pick the one that matches you
 
 ## How it works
 
-1. **Session start:** a hook injects the rules ([SKILL.md](skills/ihav-asd-ste100/SKILL.md), under 6.5 KB).
+1. **Session start:** a hook injects the rules ([SKILL.md](skills/ihav-asd-ste100/SKILL.md), at most 7,100 bytes).
 2. **Every prompt:** one reminder line keeps long sessions from drifting.
 3. **Your words win:** `stop ste mode` pauses it for the session; `ste mode` resumes it.
 4. **Exact output wins:** code-only, JSON-only and single-command requests are never wrapped.

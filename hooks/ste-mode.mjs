@@ -23,8 +23,8 @@ const OFF_ANYWHERE = /\bstop ste mode\b/;
 const ON_ANYWHERE = /\b(?:start ste mode|ste mode on)\b/;
 export const REMINDER =
   "[ihav-asd-ste100] Reply shape: **Agents-Zone** (every step: `time` why => what), **Result-Zone** (key-first " +
-  "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Done:**, 1. **InProgress:**, 2. **Pending:**, " +
-  "3. **Questions:**, 4. **Todos:**, 5. **Backlog:**, 6. **Risks:**, 7. **AIIdeas:**; items are sub-items with a bold key; " +
+  "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Goals:** (L, G with bar, B), 1. **Done:**, " +
+  "2. **Doing:**, 3. **Todos:**, 4. **Pending:**, 5. **Quests:**, 6. **Risks:**, 7. **Ideas:**; items are sub-items with a bold key; " +
   '`<a>` = recommended. No emoji or square brackets. "stop ste mode" turns this off.';
 
 // Local wall-clock time as "4:43 PM" (plain ASCII; the Intl formatter can insert a narrow no-break space).

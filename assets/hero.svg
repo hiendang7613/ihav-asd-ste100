@@ -38,21 +38,23 @@
 <text x="22" y="220" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">Admin-Zone</tspan></text>
 <text x="22" y="258" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">Conclusion:</tspan><tspan fill="#E5E7EB"> Login fixed; 1 payment test fails,</tspan></text>
 <text x="22" y="284" class="m" xml:space="preserve"><tspan fill="#E5E7EB">cause not checked.</tspan></text>
-<text x="22" y="322" class="m" xml:space="preserve"><tspan fill="#9CA3AF">0. </tspan><tspan fill="#A5B4FC" font-weight="700">Done:</tspan></text>
-<text x="22" y="348" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">Login fix:</tspan><tspan fill="#E5E7EB"> 213 of 214 tests pass.</tspan></text>
-<text x="22" y="374" class="m" xml:space="preserve"><tspan fill="#9CA3AF">1. </tspan><tspan fill="#A5B4FC" font-weight="700">InProgress:</tspan></text>
-<text x="22" y="400" class="m" xml:space="preserve"><tspan fill="#9CA3AF">2. </tspan><tspan fill="#A5B4FC" font-weight="700">Pending:</tspan></text>
-<text x="22" y="426" class="m" xml:space="preserve"><tspan fill="#9CA3AF">3. </tspan><tspan fill="#A5B4FC" font-weight="700">Questions:</tspan></text>
-<text x="22" y="452" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">Q1.</tspan><tspan fill="#86EFAC"> Approve: deploy to production?</tspan></text>
-<text x="22" y="478" class="m" xml:space="preserve"><tspan fill="#9CA3AF">     - </tspan><tspan fill="#7DD3FC">&lt;a&gt;</tspan><tspan fill="#E5E7EB"> After the payment check.</tspan></text>
-<text x="22" y="504" class="m" xml:space="preserve"><tspan fill="#9CA3AF">     - </tspan><tspan fill="#6B7280">(b) Now.</tspan></text>
-<text x="22" y="530" class="m" xml:space="preserve"><tspan fill="#9CA3AF">4. </tspan><tspan fill="#A5B4FC" font-weight="700">Todos:</tspan></text>
-<text x="22" y="556" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">Payment test:</tspan><tspan fill="#E5E7EB"> check </tspan><tspan fill="#7DD3FC">payment.spec.ts:88</tspan><tspan fill="#E5E7EB">.</tspan></text>
-<text x="22" y="582" class="m" xml:space="preserve"><tspan fill="#9CA3AF">5. </tspan><tspan fill="#A5B4FC" font-weight="700">Backlog:</tspan></text>
-<text x="22" y="608" class="m" xml:space="preserve"><tspan fill="#9CA3AF">6. </tspan><tspan fill="#A5B4FC" font-weight="700">Risks:</tspan></text>
+<text x="22" y="322" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">0. Goals:</tspan></text>
+<text x="22" y="344" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">L1.</tspan><tspan fill="#E5E7EB"> Every client can log in.</tspan></text>
+<text x="22" y="366" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">G1.</tspan><tspan fill="#E5E7EB"> Fix login -&gt; L1 </tspan><tspan fill="#7DD3FC">#######--- 2/3</tspan></text>
+<text x="22" y="388" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">1. Done:</tspan></text>
+<text x="22" y="410" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">Login fix:</tspan><tspan fill="#E5E7EB"> 213 of 214 tests pass.</tspan></text>
+<text x="22" y="432" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">2. Doing:</tspan></text>
+<text x="22" y="454" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">3. Todos:</tspan></text>
+<text x="22" y="476" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">Payment test:</tspan><tspan fill="#E5E7EB"> check </tspan><tspan fill="#7DD3FC">payment.spec.ts:88</tspan><tspan fill="#E5E7EB">.</tspan></text>
+<text x="22" y="498" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">4. Pending:</tspan></text>
+<text x="22" y="520" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">5. Quests:</tspan></text>
+<text x="22" y="542" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">Q1.</tspan><tspan fill="#86EFAC"> Approve: deploy to production?</tspan></text>
+<text x="22" y="564" class="m" xml:space="preserve"><tspan fill="#9CA3AF">     - </tspan><tspan fill="#7DD3FC">&lt;a&gt;</tspan><tspan fill="#E5E7EB"> After the payment check.</tspan></text>
+<text x="22" y="586" class="m" xml:space="preserve"><tspan fill="#9CA3AF">     - </tspan><tspan fill="#6B7280">(b) Now.</tspan></text>
+<text x="22" y="608" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">6. Risks:</tspan></text>
 <text x="22" y="634" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">R1.</tspan><tspan fill="#E5E7EB"> jsonwebtoken 8.5.1 is old.</tspan></text>
 <text x="22" y="660" class="m" xml:space="preserve"><tspan fill="#9CA3AF">     - </tspan><tspan fill="#7DD3FC">&lt;a&gt;</tspan><tspan fill="#E5E7EB"> update | (b) skip | (c) later</tspan></text>
-<text x="22" y="686" class="m" xml:space="preserve"><tspan fill="#9CA3AF">7. </tspan><tspan fill="#A5B4FC" font-weight="700">AIIdeas:</tspan></text>
+<text x="22" y="686" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">7. Ideas:</tspan></text>
 </g>
 <text x="600" y="826" text-anchor="middle" class="t" fill="#4B5563">Illustration: a hand-written sample of the reply shape, not model output.</text>
 </svg>
