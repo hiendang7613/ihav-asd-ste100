@@ -68,8 +68,9 @@ class SkillTests(unittest.TestCase):
         self.assertIn("Never omit a failure, material finding or requested detail", self.text)
         self.assertIn("Count passes; list each failure", self.text)
         for rule in ("Open with the answer or blocker", "Give each item one home",
-                     "deferred work as B lines", "Number Q, R and I from 1 in every reply, so Q1.a means the latest reply", "the ~ percent is your estimate, with one # per 10% in the bar",
-                     "G and B lines are plain", "except in L progress", "about 12 words with only the result or proving ID", "add no new fact or evidence list",
+                     "deferred work as B lines", "Number Q, R and I from 1 in every reply, so Q1.a means the latest reply", "The ~ percent is your estimate, one # per 10% in the bar",
+                     "G and B lines are plain", "always has an L", "with none, propose one in Quests", "a finished aim stays at 100%",
+                     "\"az\" or \"adminzone\" means the Admin-Zone alone", "A reply with a Quest always ends with the Admin-Zone", "except in L progress", "about 12 words with only the result or proving ID", "add no new fact or evidence list",
                      "Body, status and question text follow the user's latest language",
                      "A user or project format request changes this shape only when higher rules allow it"):
             self.assertIn(rule, self.text)

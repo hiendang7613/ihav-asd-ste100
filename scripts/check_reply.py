@@ -393,6 +393,9 @@ def check(text):
             if number == GOALS:
                 violations.extend(goal_problems(subs))
         warnings.extend(duplicate_items(sections))
+        goals = next((subs for number, _, _, subs in sections if number == GOALS), None)
+        if goals is not None and not any(re.match(r"^\s{3}[-*]\s+\*\*L[0-9]+\.\*\*", line) for line in goals):
+            warnings.append("Goals has no L line; ask the user for a long-term aim in Quests.")
         violations.extend(zone_problems(text))
         warnings.extend(step_warnings(text))
 

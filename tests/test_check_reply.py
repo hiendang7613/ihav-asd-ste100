@@ -323,6 +323,13 @@ class StyleTests(unittest.TestCase):
             with self.subTest(brackets=elsewhere[:0]):
                 self.assertFalse(check(elsewhere)["ok"])
 
+    def test_goals_without_an_l_line_warns_but_passes(self):
+        self.assertFalse(any("no L line" in w for w in check(FULL)["warnings"]))
+        no_aims = FULL.replace("   - **L1.** [~80%] [########--] | Users can log in from every client.\n", "")
+        report = check(no_aims)
+        self.assertTrue(report["ok"], report)
+        self.assertTrue(any("Goals has no L line" in w for w in report["warnings"]), report["warnings"])
+
     def test_agents_zone_lines_stay_short(self):
         self.assertFalse(any("Agents-Zone line" in w for w in check(FULL)["warnings"]))
         long_step = FULL.replace("the login test fails => read `src/auth.ts`",

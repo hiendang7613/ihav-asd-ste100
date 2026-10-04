@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.0 — 2026-10-04
+- Goals always has an L line. Only the user sets L aims; with none, the agent proposes one in Quests. A finished aim stays at `[~100%] [##########]` instead of disappearing. The checker warns, and does not fail, when Goals has no L line.
+- `az` is a short form of `adminzone`: the Admin-Zone alone. A reply that has a Quest always ends with the Admin-Zone, so a decision never hides in a short answer.
+- `node scripts/install-az.mjs` installs a personal `/az` skill in `<config dir>/skills/az/`. The file carries an ownership marker; the script never overwrites or removes an `az` skill it did not write. `--remove` deletes only its own file.
+- A session that an old release started, and that the bridge forwarder runs (`IHAV_STE100_BRIDGED=1`), gets the current rules once at its next prompt.
+- The skill stays under 7,100 bytes: the intro, the conclusion-first rule and the summary line are shorter.
+
 ## 0.18.0 — 2026-10-04
 New releases reach open Claude Code sessions without `/reload-plugins`. The reply rules do not change.
 - `hooks/ste-mode.mjs` is now a stable launcher, and the hook logic moves to `hooks/ste-core.mjs`. The launcher runs the release named in `$IHAV_HOME/active/ihav-asd-ste100.json` (default `~/.ihav`), the same pointer format that ihav-agent-room uses. It runs that release only when the pointer is a regular file owned by the user, is not writable by group or others, has `launcher_protocol` 1, and names a root inside `<config dir>/plugins/cache/ihav/ihav-asd-ste100/` whose real path holds `hooks/ste-core.mjs`. Any failed check or a broken release falls back to the launcher's own copy.

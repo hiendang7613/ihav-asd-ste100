@@ -141,7 +141,9 @@ function run() {
     }
     if (ON_EXACT.has(prompt) || ON_ANYWHERE.test(free)) fs.rmSync(marker, { force: true });
     if (fs.existsSync(marker)) return "";
-    const known = seen(input.session_id);
+    // A session started on a release older than 0.18.0 has no version marker. When the bridge forwarder runs it,
+    // treat it as an old session so it receives the current rules once.
+    const known = seen(input.session_id) || (process.env.IHAV_STE100_BRIDGED === "1" ? "a release before 0.18.0" : "");
     const text =
       known && known !== version()
         ? `STE REPLY RULES UPDATED to ${version()} (was ${known}). The rules below replace the earlier ones.\n\n` +

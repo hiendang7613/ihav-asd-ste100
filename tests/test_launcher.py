@@ -106,6 +106,15 @@ class LauncherTests(unittest.TestCase):
         self.assertNotIn("RULES UPDATED", second)
         self.assertIn("Reply shape v9:", second)
 
+    def test_a_bridged_old_session_gets_the_rules_once(self):
+        self.point(self.release("9.9.9"))
+        self.env["IHAV_STE100_BRIDGED"] = "1"
+        first = self.hook()
+        self.assertTrue(first.startswith("STE REPLY RULES UPDATED to 9.9.9 (was a release before 0.18.0)"), first[:90])
+        self.assertNotIn("RULES UPDATED", self.hook())
+        del self.env["IHAV_STE100_BRIDGED"]
+        self.assertNotIn("RULES UPDATED", self.hook(dict(PROMPT, session_id="fresh")))
+
     def test_activate_smoke_checks_writes_previous_and_rolls_back(self):
         first, second = self.release("9.9.8", word="v8"), self.release("9.9.9")
         self.assertEqual(self.activate("--root", str(first)).returncode, 0)
