@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.19.1 — 2026-10-04
+- `scripts/bridge.mjs` brings open sessions on releases before 0.18.0 to the active release without `/reload-plugins`. `--apply DIR` or `--apply-all` replaces an old `hooks/ste-mode.mjs` with a small forwarder and keeps the original as `ste-mode.orig.mjs` and in `~/.ihav/backups/ihav-asd-ste100/`. `--ensure DIR` and `--ensure-missing` recreate deleted release folders (0.12.0 to 0.17.0) with only the forwarder. `--restore DIR` and `--restore-all` undo both. The forwarder runs the active release only when the pointer passes the same checks as the launcher, and falls back to the original hook or stays silent. Written by CODEX_01, reviewed by CLAUDE_01.
+
 ## 0.19.0 — 2026-10-04
 - Goals always has an L line. Only the user sets L aims; with none, the agent proposes one in Quests. A finished aim stays at `[~100%] [##########]` instead of disappearing. The checker warns, and does not fail, when Goals has no L line.
 - `az` is a short form of `adminzone`: the Admin-Zone alone. A reply that has a Quest always ends with the Admin-Zone, so a decision never hides in a short answer.
