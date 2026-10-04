@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- `scripts/audit_sessions.py` checks the last full-format reply of every Claude Code session active in a time window (default 120 minutes) with the checker, and prints a table or JSON. It only reads `~/.claude/projects/*/*.jsonl`.
+
 ## 0.19.2 — 2026-10-04
 - A proposed L line lives only in Quests, as plain text with no percent or bar. The checker already fails an L line in Goals that lacks `[~N%] [bar] |`.
 - `bridge.mjs --ensure-missing` covers every release from 0.12.0 named in the release's `CHANGELOG.md`, so a deleted launcher folder such as 0.18.0 comes back as a forwarder too.
