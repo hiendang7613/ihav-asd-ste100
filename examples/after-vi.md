@@ -12,8 +12,8 @@
 **Conclusion:** Test đăng nhập đã đạt; còn một test thanh toán lỗi, chưa kiểm tra nguyên nhân.
 
 0. **Goals:**
-   - **L1.** Mọi client đều có thể đăng nhập.
-   - **G1.** Sửa đăng nhập cho client mới -> L1 `#######---` 2/3
+   - **L1.** [~70%] [#######---] | Mọi client đều có thể đăng nhập.
+   - **G1.** Sửa đăng nhập cho client mới
 1. **Done:**
    - **Sửa đăng nhập:** `verifyToken` đọc đúng header; `npm test` chạy 214 test, 213 test đạt.
 2. **Doing:**

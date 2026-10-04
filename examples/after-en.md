@@ -12,8 +12,8 @@
 **Conclusion:** The login test passes now; one payment test still fails, and I did not check why.
 
 0. **Goals:**
-   - **L1.** Every client can log in.
-   - **G1.** Fix login for the new client -> L1 `#######---` 2/3
+   - **L1.** [~70%] [#######---] | Every client can log in.
+   - **G1.** Fix login for the new client
 1. **Done:**
    - **Login fix:** `verifyToken` reads the right header; `npm test` ran 214 tests and 213 pass.
 2. **Doing:**

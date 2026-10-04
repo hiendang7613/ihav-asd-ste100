@@ -13,8 +13,8 @@
 **Conclusion:** Login is fixed and on staging; one payment test still fails, cause not checked.
 
 0. **Goals:**
-   - **L1.** Every client can log in.
-   - **G1.** Fix login for the new client -> L1 `#######---` 2/3
+   - **L1.** [~70%] [#######---] | Every client can log in.
+   - **G1.** Fix login for the new client
 1. **Done:**
    - **Login fix:** `npm test` ran 214 tests and 213 pass; staging is deployed.
 2. **Doing:**

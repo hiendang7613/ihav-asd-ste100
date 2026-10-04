@@ -12,8 +12,8 @@
 **Conclusion:** La prueba de login ya pasa; una prueba de pagos sigue fallando y no revisé la causa.
 
 0. **Goals:**
-   - **L1.** Todos los clientes pueden iniciar sesión.
-   - **G1.** Corregir el login del cliente nuevo -> L1 `#######---` 2/3
+   - **L1.** [~70%] [#######---] | Todos los clientes pueden iniciar sesión.
+   - **G1.** Corregir el login del cliente nuevo
 1. **Done:**
    - **Login:** `verifyToken` lee la cabecera correcta; `npm test` ejecutó 214 pruebas y pasan 213.
 2. **Doing:**

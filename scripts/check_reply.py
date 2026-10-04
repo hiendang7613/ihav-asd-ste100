@@ -29,9 +29,10 @@ ID_KEYS = {GOALS: "LGB", QUESTIONS: "Q", RISKS: "R", IDEAS: "I"}
 MUST_CHOOSE = (RISKS, IDEAS)  # every risk and idea offers a choice
 ALWAYS_SHOWN = tuple(SECTIONS)  # every section is shown; an empty one shows only its label
 BAR_WIDTH = 10
-GOAL_BAR = re.compile(r"`([#-]{%d})` ([0-9]+)/([0-9]+)$" % BAR_WIDTH)
-NO_PLAN = "no plan yet"
-GOAL_TARGET = re.compile(r"->\s*L([0-9]+)\b")
+# An L line opens with the agent's estimate and a bar, one # per 10 percent: **L1.** [~80%] [########--] | aim
+L_PROGRESS = re.compile(r"^\[~([0-9]{1,3})%%\] \[([#-]{%d})\] \| \S" % BAR_WIDTH)
+L_PROGRESS_LINE = re.compile(r"(?m)^(   [-*] \*\*L[0-9]+\.\*\* )\[~[0-9]{1,3}%%\] \[[#-]{%d}\]" % BAR_WIDTH)
+MAX_STEP_WORDS = 16
 MAX_CONCLUSION_WORDS = 25
 MAX_SENTENCE_WORDS = 25
 BODY_WORD_BUDGET = 250
@@ -231,8 +232,8 @@ def numbering_problems(number, sub_items):
 
 
 def goal_problems(sub_items):
-    """Goals lists L, then G, then B lines. Only the user sets L lines, and they carry no percent. A G line names an
-    L shown above when one exists, and ends with a bar of planned steps or "no plan yet"."""
+    """Goals lists L, then G, then B lines. Only the user sets L aims; each L line opens with the agent's estimate
+    and a bar, one # per 10 percent. G and B lines are plain text: no bar, no percent and no link."""
     problems, goals, order = [], [], []
     for line in sub_items:
         if len(line) - len(line.lstrip()) > 3:
@@ -243,32 +244,49 @@ def goal_problems(sub_items):
             order.append("LGB".index(match.group(1)))
     if order != sorted(order):
         problems.append("Goals lists L lines, then G lines, then B lines.")
-    aims = {number for letter, number, _ in goals if letter == "L"}
     for letter, number, text in goals:
-        if letter == "L" and ("%" in text or GOAL_BAR.search(text.strip())):
-            problems.append("L%s is a long-term aim: no percent and no bar." % number)
-        if letter != "G":
+        if letter != "L":
+            if re.search(r"[#-]{%d}|%%|->\s*L[0-9]" % BAR_WIDTH, text):
+                problems.append("%s%s is plain text: no bar, percent or link." % (letter, number))
             continue
-        targets = GOAL_TARGET.findall(text)
-        if aims and not targets:
-            problems.append("G%s must name the L line it serves: -> L1." % number)
-        for target in (target for target in targets if target not in aims):
-            problems.append("G%s names L%s, which Goals does not show." % (number, target))
-        bar = GOAL_BAR.search(text.strip())
-        if not bar:
-            if not text.strip().rstrip(".").endswith(NO_PLAN):
-                problems.append("G%s ends with a bar such as `######----` 3/5, or \"%s\"." % (number, NO_PLAN))
+        progress = L_PROGRESS.match(text)
+        if not progress:
+            problems.append("L%s opens with [~80%%] [########--] | then the aim." % number)
             continue
-        filled, done, total = bar.group(1).count("#"), int(bar.group(2)), int(bar.group(3))
-        if total == 0 or done > total:
-            problems.append("G%s counts %d of %d steps; use 0 to total, with total above 0." % (number, done, total))
-        else:
-            exact = BAR_WIDTH * done / total  # a half step may round either way
-            expected = int(exact + 0.5)
-            if bar.group(1) != "#" * filled + "-" * (BAR_WIDTH - filled) or filled not in (expected, round(exact)):
-                problems.append("G%s bar must be %s for %d/%d."
-                                % (number, "#" * expected + "-" * (BAR_WIDTH - expected), done, total))
+        percent, bar = int(progress.group(1)), progress.group(2)
+        filled = bar.count("#")
+        if percent > 100:
+            problems.append("L%s estimate is %d%%; use 0 to 100." % (number, percent))
+        elif bar != "#" * filled + "-" * (BAR_WIDTH - filled) or filled not in (int(percent / 10 + 0.5), round(percent / 10)):
+            expected = int(percent / 10 + 0.5)
+            problems.append("L%s bar must be %s for ~%d%%." % (number, "#" * expected + "-" * (BAR_WIDTH - expected), percent))
     return problems
+
+
+def goals_progress_removed(text):
+    """Remove the [~80%] [########--] prefix from L lines inside the Goals section only, the one place brackets are allowed."""
+    lines = text.split("\n")
+    start = next((i for i, line in enumerate(lines) if re.match(r"^0\.\s+\*\*Goals:\*\*", line)), None)
+    if start is None:
+        return text
+    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^[0-9]\.\s", lines[i])), len(lines))
+    lines[start + 1:end] = [L_PROGRESS_LINE.sub(r"\1", line) for line in lines[start + 1:end]]
+    return "\n".join(lines)
+
+
+def step_warnings(text):
+    """Agents-Zone lines stay short: about 12 words, warned above MAX_STEP_WORDS. A code span counts as one word."""
+    lines = mask_code(text).splitlines()
+    labels = [index for index, line in enumerate(lines) if ZONE_LINE.match(line)]
+    names = [ZONE_LINE.match(lines[index]).group(1) for index in labels]
+    if names[:2] != ["Agents-Zone", "Result-Zone"]:
+        return []
+    warnings = []
+    for line in lines[labels[0] + 1:labels[1]]:
+        words = units(re.sub(r"`[^`]*`", "x", line[2:]))
+        if line.strip() and words > MAX_STEP_WORDS:
+            warnings.append("Agents-Zone line has %g words (target about 12): %s..." % (words, line[:40]))
+    return warnings
 
 
 def duplicate_items(sections):
@@ -376,8 +394,9 @@ def check(text):
                 violations.extend(goal_problems(subs))
         warnings.extend(duplicate_items(sections))
         violations.extend(zone_problems(text))
+        warnings.extend(step_warnings(text))
 
-    outside_code = re.sub(r"`[^`]*`", "", strip_code(text))
+    outside_code = goals_progress_removed(re.sub(r"`[^`]*`", "", strip_code(text)))
     section_candidates = [line for line in strip_code(text).splitlines() if SECTION_CANDIDATE.match(line)]
     if any(not line.split(".", 1)[0].isascii() for line in section_candidates):
         violations.append("Section numbers and structural colons must use ASCII.")

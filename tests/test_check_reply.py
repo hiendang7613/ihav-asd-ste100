@@ -19,8 +19,8 @@ FULL = """**Agents-Zone**
 **Conclusion:** Login is fixed; one payment test still fails, cause not checked.
 
 0. **Goals:**
-   - **L1.** Users can log in from every client.
-   - **G1.** Fix the login test -> L1 `########--` 4/5
+   - **L1.** [~80%] [########--] | Users can log in from every client.
+   - **G1.** Fix the login test.
    - **B1.** Update the login guide later.
 1. **Done:**
    - **Login fix:** merged.
@@ -286,31 +286,28 @@ class StyleTests(unittest.TestCase):
         self.assertTrue(report["ok"])
         self.assertTrue(any("Long sentence (30 words)" in w for w in report["warnings"]))
 
-    def test_goals_list_aims_current_goals_with_a_bar_and_deferred_work(self):
-        G1 = "   - **G1.** Fix the login test -> L1 `########--` 4/5"
-        for bad, message in (("`#######---` 4/5", "bar must be ########--"), ("`########--` 6/5", "6 of 5 steps"),
-                             ("`----------` 0/0", "0 of 0 steps"), ("`##-#######` 4/5", "bar must be"),
-                             ("`########` 4/5", "ends with a bar"), ("", "ends with a bar")):
-            with self.subTest(bar=bad):
-                text = FULL.replace(G1, G1.replace("`########--` 4/5", bad).rstrip())
+    def test_goals_list_estimated_aims_then_plain_goals_and_deferred_work(self):
+        L1 = "[~80%] [########--] | Users"
+        for bad, message in (("[~80%] [#######---] | Users", "bar must be ########--"),
+                             ("[~120%] [##########] | Users", "use 0 to 100"),
+                             ("[~80%] [##-#######] | Users", "bar must be"),
+                             ("[80%] [########--] | Users", "opens with [~80%] [########--] |"),
+                             ("[~80%] [########--] Users", "opens with"), ("Users", "opens with")):
+            with self.subTest(l1=bad):
+                text = FULL.replace(L1, bad)
                 self.assertNotEqual(text, FULL)
                 self.assertTrue(any(message in v for v in check(text)["violations"]), check(text)["violations"])
-        for good in ("`#####-----` 1/2", "`###-------` 1/4", "`##--------` 1/4", "no plan yet", "no plan yet."):
-            with self.subTest(bar=good):
-                text = FULL.replace("`########--` 4/5", good)
+        for good in ("[~0%] [----------] | Users", "[~100%] [##########] | Users", "[~25%] [###-------] | Users",
+                     "[~25%] [##--------] | Users"):
+            with self.subTest(l1=good):
+                text = FULL.replace(L1, good)
                 self.assertTrue(check(text)["ok"], check(text))
-        missing = FULL.replace("-> L1 ", "")
-        self.assertTrue(any("must name the L line" in v for v in check(missing)["violations"]))
-        unknown = FULL.replace("-> L1", "-> L2")
-        self.assertTrue(any("names L2, which Goals does not show" in v for v in check(unknown)["violations"]))
-        second = FULL.replace("-> L1", "-> L1 -> L2")
-        self.assertTrue(any("names L2, which Goals does not show" in v for v in check(second)["violations"]))
-        two_aims = second.replace("   - **G1.**", "   - **L2.** Login stays fast.\n   - **G1.**")
-        self.assertTrue(check(two_aims)["ok"], check(two_aims))
-        no_aims = missing.replace("   - **L1.** Users can log in from every client.\n", "")
+        for extra in (" -> L1", " `########--` 4/5", " 50%"):
+            with self.subTest(g1=extra):
+                text = FULL.replace("Fix the login test.", "Fix the login test" + extra)
+                self.assertTrue(any("G1 is plain text" in v for v in check(text)["violations"]), check(text)["violations"])
+        no_aims = FULL.replace("   - **L1.** [~80%] [########--] | Users can log in from every client.\n", "")
         self.assertTrue(check(no_aims)["ok"], check(no_aims))
-        percent = FULL.replace("from every client.", "from every client, 80% done.")
-        self.assertTrue(any("no percent" in v for v in check(percent)["violations"]))
         order = FULL.replace("   - **B1.** Update the login guide later.\n", "").replace(
             "   - **L1.**", "   - **B1.** Update the login guide later.\n   - **L1.**")
         self.assertTrue(any("L lines, then G lines, then B lines" in v for v in check(order)["violations"]))
@@ -319,6 +316,22 @@ class StyleTests(unittest.TestCase):
                             for v in check(keyed)["violations"]))
         empty = FULL[:FULL.index("   - **L1.**")] + FULL[FULL.index("1. **Done:**"):]
         self.assertTrue(check(empty)["ok"], check(empty))
+        for elsewhere in (FULL.replace("213 pass.", "213 pass [~80%]."),
+                          FULL.replace("**Result-Zone**\n", "**Result-Zone**\n   - **L2.** [~80%] [########--] | Extra aim.\n"),
+                          FULL.replace("   - **Review:** waiting", "   - **L2.** [~80%] [########--] | Extra aim.\n   - **Review:** waiting"),
+                          FULL.replace("   - **G1.** Fix the login test.", "   - **G1.** [~80%] [########--] | Fix the login test.")):
+            with self.subTest(brackets=elsewhere[:0]):
+                self.assertFalse(check(elsewhere)["ok"])
+
+    def test_agents_zone_lines_stay_short(self):
+        self.assertFalse(any("Agents-Zone line" in w for w in check(FULL)["warnings"]))
+        long_step = FULL.replace("the login test fails => read `src/auth.ts`",
+                                 "the login test fails for the new mobile client after the release => read the whole `src/auth.ts` file")
+        report = check(long_step)
+        self.assertTrue(report["ok"], report)
+        self.assertTrue(any("Agents-Zone line has" in w for w in report["warnings"]), report["warnings"])
+        code = FULL.replace("read `src/auth.ts`", "read `src/auth.ts` `src/a.ts` `src/b.ts` `src/c.ts` `src/d.ts` `src/e.ts` `x`")
+        self.assertFalse(any("Agents-Zone line" in w for w in check(code)["warnings"]))
 
     def test_q_r_and_i_restart_at_1_in_every_reply(self):
         for old, new in (("**Q1.**", "**Q50.**"), ("**R1.**", "**R30.**"), ("**I1.**", "**I2.**")):
@@ -329,7 +342,7 @@ class StyleTests(unittest.TestCase):
         self.assertTrue(any("Q1, Q3" in v for v in check(gap)["violations"]))
         two = FULL.replace("     - (b) Now.\n", "     - (b) Now.\n   - **Q2.** Merge the docs too?\n")
         self.assertTrue(check(two)["ok"], check(two))
-        stable = FULL.replace("**L1.**", "**L3.**").replace("-> L1", "-> L3").replace("**G1.**", "**G7.**").replace("**B1.**", "**B4.**")
+        stable = FULL.replace("**L1.**", "**L3.**").replace("**G1.**", "**G7.**").replace("**B1.**", "**B4.**")
         self.assertTrue(check(stable)["ok"], check(stable))
 
     def test_adminzone_reply_has_the_admin_zone_alone(self):

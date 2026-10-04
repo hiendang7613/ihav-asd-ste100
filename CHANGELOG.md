@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.0 — 2026-10-04
+**Breaking for Goals:** the progress bar moves from G lines to L lines, chosen by the first user.
+- An L line opens with the agent's estimate and a ten-character bar, then a pipe and the aim: `**L1.** [~80%] [########--] | aim`. The `~` marks the percent as an estimate; the bar has one `#` per 10 percent. These are the only square brackets the rules allow.
+- G and B lines are plain text, with no bar, step count, percent or `-> L` link.
+- Agents-Zone lines are short: about 12 words, with only the result or the proving ID; details go to the Result-Zone. The checker warns above 16 words and counts a code span as one word.
+- The checker checks the L layout and that the bar matches the percent. It cannot check that the estimate is right.
+
 ## 0.16.0 — 2026-10-04
 - Q, R and I items restart at 1 in every reply, so a short answer such as `Q1.a` always means the latest reply. L, G and B lines keep stable IDs while the goal exists. The checker fails a decision list that does not run 1, 2, 3 in order, such as `Q50` or `Q1`, `Q3`. Reported in the `ihav-web-visit-counter` room, where the numbers had grown to `Q50` and `R30`.
 

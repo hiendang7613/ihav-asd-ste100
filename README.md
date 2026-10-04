@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.16.0" src="https://img.shields.io/badge/version-0.16.0-4F46E5">
+  <img alt="Version 0.17.0" src="https://img.shields.io/badge/version-0.17.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
@@ -78,8 +78,8 @@ Every reply that has more than one fact has three zones, each under a bold label
 **Conclusion:** Login is fixed and on staging; one payment test still fails, cause not checked.
 
 0. **Goals:**
-   - **L1.** Every client can log in.
-   - **G1.** Fix login for the new client -> L1 `#######---` 2/3
+   - **L1.** [~70%] [#######---] | Every client can log in.
+   - **G1.** Fix login for the new client
    - **B1.** Update the login guide later.
 1. **Done:**
    - **Login fix:** `npm test` ran 214 tests and 213 pass.
@@ -106,7 +106,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 | **Result-Zone** | The answer or blocker first, then the facts and evidence as key-first bullets | The agent, already |
 | **Admin-Zone** | The Conclusion line and the eight sections below | You decide from here |
 | **Conclusion** | The result in one sentence. Bad news first: failure, skip, blocker, unverified work. | Nobody: it is the verdict |
-| `0. **Goals:**` | L lines: user-set long-term aims; G lines: current goals and planned-step progress; B lines: deferred or optional work | You set L; the agent tracks G and B |
+| `0. **Goals:**` | L lines: user-set long-term aims with the agent's estimated progress; G lines: current goals; B lines: deferred or optional work | You set L; the agent tracks G and B |
 | `1. **Done:**` | Finished and checked work, with its evidence | The agent, already |
 | `2. **Doing:**` | Work running now: builds, jobs, other agents | The agent or a tool, now |
 | `3. **Todos:**` | Work in the current task the agent does next, in order | The agent, next |
@@ -116,7 +116,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 | `7. **Ideas:**` | Ideas the agent proposes, each **I1.** with a choice: plan, skip or later | You |
 
 - **All eight sections, always, as one list from 0 to 7.** An empty one shows only its label, so you always see whether anything runs, waits or comes next. One blank line separates the list from the Conclusion line; none separates the sections. Each zone label sits on its own line after a blank line. You can answer "Q1 a, R1 c, I1 b" in one line.
-- **Goals:** list L, G, then B lines. Only the user sets a long-term aim, with no percentage. A current goal links to its aim with `-> L1`, if one exists. End it with a ten-character ASCII bar and done/total, such as `#######---` 2/3, or `no plan yet`. Fill `round(10 * done / total)` positions with `#`; use `-` for the rest.
+- **Goals:** list L, G, then B lines. Only the user sets a long-term aim. Each L line opens with the agent's estimate and a ten-character ASCII bar, one `#` per 10 percent, then a pipe and the aim: `[~70%] [#######---] | Every client can log in.` These are the only square brackets allowed. G lines (current goals) and B lines (deferred work) are plain text.
 - **The recommended option** is written as `<a>` in code; the other options are (b), (c). You answer with one letter.
 - **Small answers stay small:** one fact, one sentence. Code-only, JSON-only and one-command requests get exactly that.
 - **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to a B line in Goals.
@@ -135,7 +135,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 | Bold | Labels, plus at most one phrase per bullet | Emphasis that is everywhere is nowhere |
 | Lists | Two levels in the body; at most five items you must act on | A short list is read; a long one is skipped |
 | Tables | Only to compare three or more items | Terminals wrap wide tables |
-| Never | Emoji, square brackets, headings, boxes, or a reply wrapped in a code block | They cost lines and show raw markers |
+| Never | Emoji, square brackets outside L progress, headings, boxes, or a reply wrapped in a code block | They cost lines and show raw markers |
 
 Why `<a>` sits in a code span: a bare `<a>` or `<b>` is an HTML tag, and Markdown renderers delete it. We checked this on GitHub.
 
@@ -147,7 +147,7 @@ Task: *"The login test fails for the new client. Fix it and tell me where we are
 
 | | Default agent | [i-have-adhd](https://github.com/ayghri/i-have-adhd) | ihav-asd-ste100 |
 |---|---|---|---|
-| Words (inline code counts as one) | 166 | 82 | 159 |
+| Words (inline code counts as one) | 166 | 82 | 157 |
 | Longest sentence | 57 words | 18 words | 15 words |
 | Where the approval is | Mid-paragraph | First and last line ("Next:") | 5.Quests, as "Approve:" with options |
 | The failing test in the summary | "probably unrelated" | Inside a numbered step | Conclusion line: "cause not checked" |
@@ -190,8 +190,8 @@ The samples are illustrative: written by hand from each project's published rule
 > **Conclusion:** Login is fixed and on staging; one payment test still fails, cause not checked.
 >
 > 0. **Goals:**
->    - **L1.** Every client can log in.
->    - **G1.** Fix login for the new client -> L1 `#######---` 2/3
+>    - **L1.** [~70%] [#######---] | Every client can log in.
+>    - **G1.** Fix login for the new client
 > 1. **Done:**
 >    - **Login fix:** `npm test` ran 214 tests and 213 pass; staging is deployed.
 > 2. **Doing:**

@@ -75,9 +75,9 @@ class HookTests(unittest.TestCase):
         self.assertEqual(out.count("\n"), 1)
         # 480 bytes (was 400 until 0.11.0): the three zone names and the local time are worth about 50 bytes per prompt.
         self.assertLess(len(out.encode()), 480)
-        self.assertIn("0. **Goals:** (L, G with bar, B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
+        self.assertIn("0. **Goals:** (L with ~% bar, G, B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
                       "5. **Quests:**, 6. **Risks:**, 7. **Ideas:**", out)
-        for zone in ("**Agents-Zone** (every step: `time` why => what)", "**Result-Zone**", "**Admin-Zone**"):
+        for zone in ("**Agents-Zone** (short step lines: `time` why => what)", "No emoji or square brackets except L progress.", "**Result-Zone**", "**Admin-Zone**"):
             self.assertIn(zone, out)
         self.assertRegex(out, r" Now (1[0-2]|[1-9]):[0-5][0-9] (AM|PM)\.\n$")
         self.assertIn("items are sub-items with a bold key", out)
