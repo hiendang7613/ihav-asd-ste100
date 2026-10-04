@@ -1,11 +1,13 @@
 // Bridge old installed hooks to the active release; originals stay recoverable.
 // --list is read-only. --apply DIR / --restore DIR target one cache release;
 // --apply-all / --restore-all visit old releases in this host's config cache.
-// --ensure DIR recreates a missing hook path; --ensure-missing covers 0.12.0..0.17.0.
+// --ensure DIR recreates a missing hook path; --ensure-missing covers every release from 0.12.0 named in
+// this release's CHANGELOG.md, so deleted folders of any later release come back as forwarders too.
 // JSON on stdout; exit 0 success, 1 folder failure, 2 invalid arguments.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { configDir } from "../hooks/active.mjs";
 
 const MARKER = "// ihav-asd-ste100 bridge forwarder v1";
@@ -191,6 +193,19 @@ function operate(dir, action) {
   return { root: entry.root, status: "restored" };
 }
 
+// Releases from 0.12.0 on, read from the "## X.Y.Z" headings of this release's CHANGELOG.md.
+function releases() {
+  const log = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "CHANGELOG.md");
+  const found = new Set(["0.12.0", "0.13.0", "0.14.0", "0.15.0", "0.16.0", "0.17.0"]);
+  try {
+    for (const match of fs.readFileSync(log, "utf8").matchAll(/^## ([0-9]+)\.([0-9]+)\.([0-9]+)\b/gm)) {
+      const [major, minor] = [Number(match[1]), Number(match[2])];
+      if (major > 0 || minor >= 12) found.add(`${match[1]}.${match[2]}.${match[3]}`);
+    }
+  } catch { /* The fixed list above still applies. */ }
+  return [...found].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
 function main(argv) {
   const [flag, dir] = argv;
   const single = flag === "--apply" || flag === "--restore" || flag === "--ensure";
@@ -202,7 +217,7 @@ function main(argv) {
   const action = flag === "--list" ? "list" : flag.startsWith("--apply") ? "apply" : flag.startsWith("--ensure") ? "ensure" : "restore";
   const results = [];
   const roots = single ? [dir] : flag === "--ensure-missing"
-    ? Array.from({ length: 6 }, (_, i) => path.join(cache(), "ihav", "ihav-asd-ste100", `0.${i + 12}.0`))
+    ? releases().map((version) => path.join(cache(), "ihav", "ihav-asd-ste100", version))
     : discover();
   for (const root of roots) {
     try { results.push(operate(root, action)); }

@@ -112,7 +112,22 @@ function main(argv) {
     return 1;
   }
   process.stdout.write(`${JSON.stringify(readPointer(), null, 2)}\n`);
+  process.stderr.write(`${ensureMissing(readPointer().root)}\n`);
   return 0;
+}
+
+// Re-create deleted release folders as forwarders, so sessions that still point at them keep working.
+// A failure here never undoes or fails the activation.
+function ensureMissing(root) {
+  const bridge = path.join(root, "scripts", "bridge.mjs");
+  if (!fs.existsSync(bridge)) return "ensure-missing: skipped, this release has no bridge";
+  const run = spawnSync(process.execPath, [bridge, "--ensure-missing"], { encoding: "utf8", timeout: 20000 });
+  try {
+    const created = JSON.parse(run.stdout).results.filter((r) => r.status === "created").map((r) => path.basename(r.root));
+    return `ensure-missing: ${run.status === 0 ? "ok" : "failed"}, created ${created.length ? created.join(", ") : "none"}`;
+  } catch {
+    return `ensure-missing: failed (${(run.stderr || "no output").trim().slice(0, 200)})`;
+  }
 }
 
 process.exitCode = main(process.argv.slice(2));

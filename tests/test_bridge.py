@@ -1,5 +1,6 @@
 """Bridge old cache copies in a temporary HOME; never touch real installs."""
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -212,7 +213,12 @@ class BridgeTests(unittest.TestCase):
     def test_ensure_missing_creates_only_missing_versions_and_preserves_existing(self):
         existing = self.old_release("ihav", "ihav-asd-ste100", "0.15.0")
         result = self.cli("--ensure-missing")
-        self.assertEqual(sum(r["status"] == "created" for r in result["results"]), 5)
+        listed = {re.match(r"## ([0-9.]+)", line).group(1) for line in (ROOT / "CHANGELOG.md").read_text().splitlines()
+                  if re.match(r"## 0\.(1[2-9]|[2-9][0-9])\.[0-9]+", line)}
+        expected = len(listed | {"0.%d.0" % v for v in range(12, 18)}) - 1
+        self.assertGreaterEqual(expected, 8)
+        self.assertEqual(sum(r["status"] == "created" for r in result["results"]), expected)
+        self.assertIn("0.18.0", [Path(r["root"]).name for r in result["results"]])
         self.assertEqual((existing / "hooks/ste-mode.mjs").read_bytes(), OLD)
         self.assertFalse((existing / ".ihav-bridge-created").exists())
         self.assertTrue(all(r["status"] == "skipped" for r in self.cli("--ensure-missing")["results"]))

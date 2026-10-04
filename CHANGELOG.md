@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.2 — 2026-10-04
+- A proposed L line lives only in Quests, as plain text with no percent or bar. The checker already fails an L line in Goals that lacks `[~N%] [bar] |`.
+- `bridge.mjs --ensure-missing` covers every release from 0.12.0 named in the release's `CHANGELOG.md`, so a deleted launcher folder such as 0.18.0 comes back as a forwarder too.
+- `activate.mjs` runs `bridge.mjs --ensure-missing` after each activation and reports the folders it created. A failure there never undoes the activation.
+- The Result-Zone rule on long lists is shorter; it keeps the same meaning.
+
 ## 0.19.1 — 2026-10-04
 - `scripts/bridge.mjs` brings open sessions on releases before 0.18.0 to the active release without `/reload-plugins`. `--apply DIR` or `--apply-all` replaces an old `hooks/ste-mode.mjs` with a small forwarder and keeps the original as `ste-mode.orig.mjs` and in `~/.ihav/backups/ihav-asd-ste100/`. `--ensure DIR` and `--ensure-missing` recreate deleted release folders (0.12.0 to 0.17.0) with only the forwarder. `--restore DIR` and `--restore-all` undo both. The forwarder runs the active release only when the pointer passes the same checks as the launcher, and falls back to the original hook or stays silent. Written by CODEX_01, reviewed by CLAUDE_01.
 

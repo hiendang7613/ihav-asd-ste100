@@ -32,6 +32,7 @@ class LauncherTests(unittest.TestCase):
         target = (where or self.base) / version
         for part in ("hooks", "skills", "scripts", ".claude-plugin"):
             shutil.copytree(ROOT / part, target / part)
+        shutil.copy(ROOT / "CHANGELOG.md", target / "CHANGELOG.md")
         core = target / "hooks/ste-core.mjs"
         core.write_text(core.read_text().replace("Reply shape:", "Reply shape %s:" % word))
         manifest = target / ".claude-plugin/plugin.json"
@@ -148,6 +149,15 @@ class LauncherTests(unittest.TestCase):
         repaired = self.hook()
         self.assertTrue(repaired.startswith("STE REPLY RULES UPDATED to 9.9.9"), repaired[:80])
         self.assertNotIn("RULES UPDATED", self.hook())
+
+    def test_activate_recreates_deleted_release_folders(self):
+        current = self.release("9.9.9")
+        result = self.activate("--root", str(current))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("ensure-missing: ok, created", result.stderr)
+        self.assertTrue((self.base / "0.14.0/hooks/ste-mode.mjs").exists())
+        self.assertTrue((self.base / "0.18.0/.ihav-bridge-created").exists())
+        self.assertIn("Reply shape v9:", self.hook({"hook_event_name": "UserPromptSubmit", "session_id": "old", "prompt": "hi"}))
 
     def test_activate_refuses_a_failing_or_outside_release(self):
         good = self.release("9.9.8", word="v8")
