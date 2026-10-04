@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.16.0 — 2026-10-04
+- Q, R and I items restart at 1 in every reply, so a short answer such as `Q1.a` always means the latest reply. L, G and B lines keep stable IDs while the goal exists. The checker fails a decision list that does not run 1, 2, 3 in order, such as `Q50` or `Q1`, `Q3`. Reported in the `ihav-web-visit-counter` room, where the numbers had grown to `Q50` and `R30`.
+
 ## 0.15.0 — 2026-10-04
 **Breaking:** a new eight-section list with Goals first, chosen by the first user. Replies in the old shape fail the checker.
 

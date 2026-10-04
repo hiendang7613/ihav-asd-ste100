@@ -320,6 +320,18 @@ class StyleTests(unittest.TestCase):
         empty = FULL[:FULL.index("   - **L1.**")] + FULL[FULL.index("1. **Done:**"):]
         self.assertTrue(check(empty)["ok"], check(empty))
 
+    def test_q_r_and_i_restart_at_1_in_every_reply(self):
+        for old, new in (("**Q1.**", "**Q50.**"), ("**R1.**", "**R30.**"), ("**I1.**", "**I2.**")):
+            with self.subTest(item=new):
+                text = FULL.replace(old, new)
+                self.assertTrue(any("from %s1 in every reply" % new[2] in v for v in check(text)["violations"]))
+        gap = FULL.replace("     - (b) Now.\n", "     - (b) Now.\n   - **Q3.** Merge the docs too?\n")
+        self.assertTrue(any("Q1, Q3" in v for v in check(gap)["violations"]))
+        two = FULL.replace("     - (b) Now.\n", "     - (b) Now.\n   - **Q2.** Merge the docs too?\n")
+        self.assertTrue(check(two)["ok"], check(two))
+        stable = FULL.replace("**L1.**", "**L3.**").replace("-> L1", "-> L3").replace("**G1.**", "**G7.**").replace("**B1.**", "**B4.**")
+        self.assertTrue(check(stable)["ok"], check(stable))
+
     def test_adminzone_reply_has_the_admin_zone_alone(self):
         admin_only = FULL[FULL.index("**Admin-Zone**"):]
         self.assertTrue(check(admin_only)["ok"], check(admin_only))

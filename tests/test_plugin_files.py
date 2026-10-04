@@ -68,7 +68,7 @@ class SkillTests(unittest.TestCase):
         self.assertIn("Never omit a failure, material finding or requested detail", self.text)
         self.assertIn("Count passes; list each failure", self.text)
         for rule in ("Open with the answer or blocker", "Give each item one home",
-                     "deferred work as B lines", "Only the user sets L lines, with no percent",
+                     "deferred work as B lines", "Number Q, R and I from 1 in every reply, so Q1.a means the latest reply", "Only the user sets L lines, with no percent",
                      "`round(10 * done / total)` filled, or \"no plan yet\"", "add no new fact or evidence list",
                      "Body, status and question text follow the user's latest language",
                      "A user or project format request changes this shape only when higher rules allow it"):

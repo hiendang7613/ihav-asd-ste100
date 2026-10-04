@@ -218,6 +218,18 @@ def indentation_problems(number, sub_items):
     return problems
 
 
+def numbering_problems(number, sub_items):
+    """Q, R and I items restart at 1 in every reply, so a short answer such as Q1.a always means the latest reply.
+    L, G and B keep stable IDs across replies and are not checked here."""
+    letter = ID_KEYS[number]
+    found = [int(match.group(1)) for match in (re.match(r"^\*\*%s([0-9]+)\.\*\*" % letter, SUB_ITEM.match(line).group(1))
+                                               for line in sub_items if len(line) - len(line.lstrip()) <= 3) if match]
+    if found != list(range(1, len(found) + 1)):
+        return ["Section %d numbers %s; number %s items from %s1 in every reply, in order."
+                % (number, ", ".join("%s%d" % (letter, n) for n in found), letter, letter)]
+    return []
+
+
 def goal_problems(sub_items):
     """Goals lists L, then G, then B lines. Only the user sets L lines, and they carry no percent. A G line names an
     L shown above when one exists, and ends with a bar of planned steps or "no plan yet"."""
@@ -359,6 +371,7 @@ def check(text):
             violations.extend(indentation_problems(number, subs))
             if number in (QUESTIONS, RISKS, IDEAS):
                 violations.extend(question_problems(number, subs))
+                violations.extend(numbering_problems(number, subs))
             if number == GOALS:
                 violations.extend(goal_problems(subs))
         warnings.extend(duplicate_items(sections))
