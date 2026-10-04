@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.19.3 — 2026-10-04
+- The checker allows a Conclusion line of up to 35 words, up from 25. An audit of every room found replies of 26 to 56 words, and the first user chose 35.
+- The prompt reminder now shows the L layout, `**L1.** [~N%] [bar] | aim`, and says that G and B lines are plain. One audited room still drew bars on G lines after receiving the new rules. The reminder limit in the tests rises from 480 to 520 bytes.
 - `scripts/audit_sessions.py` checks the last full-format reply of every Claude Code session active in a time window (default 120 minutes) with the checker, and prints a table or JSON. It only reads `~/.claude/projects/*/*.jsonl`.
 
 ## 0.19.2 — 2026-10-04

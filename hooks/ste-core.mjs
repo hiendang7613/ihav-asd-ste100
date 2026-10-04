@@ -25,7 +25,7 @@ const OFF_ANYWHERE = /\bstop ste mode\b/;
 const ON_ANYWHERE = /\b(?:start ste mode|ste mode on)\b/;
 export const REMINDER =
   "[ihav-asd-ste100] Reply shape: **Agents-Zone** (short step lines: `time` why => what), **Result-Zone** (key-first " +
-  "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Goals:** (L with ~% bar, G, B), 1. **Done:**, " +
+  "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Goals:** (`**L1.** [~N%] [bar] | aim`, then plain G and B), 1. **Done:**, " +
   "2. **Doing:**, 3. **Todos:**, 4. **Pending:**, 5. **Quests:**, 6. **Risks:**, 7. **Ideas:**; items are sub-items with a bold key; " +
   '`<a>` = recommended. No emoji or square brackets except L progress. "stop ste mode" turns this off.';
 

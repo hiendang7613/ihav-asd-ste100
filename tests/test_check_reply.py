@@ -209,8 +209,10 @@ class ShapeTests(unittest.TestCase):
         self.assertFalse(any("appears in sections" in w for w in check(nested)["warnings"]), check(nested)["warnings"])
 
     def test_conclusion_line_length(self):
-        long_line = FULL.replace("Login is fixed; one payment test still fails, cause not checked.", " ".join(["word"] * 26) + ".")
-        self.assertTrue(any("Conclusion line has 26" in v for v in check(long_line)["violations"]))
+        at_limit = FULL.replace("Login is fixed; one payment test still fails, cause not checked.", " ".join(["word"] * 35) + ".")
+        self.assertTrue(check(at_limit)["ok"], check(at_limit))
+        long_line = FULL.replace("Login is fixed; one payment test still fails, cause not checked.", " ".join(["word"] * 36) + ".")
+        self.assertTrue(any("Conclusion line has 36 words (limit 35)" in v for v in check(long_line)["violations"]))
 
     def test_structural_markers_use_ascii_digits_and_colons(self):
         variants = (

@@ -73,9 +73,9 @@ class HookTests(unittest.TestCase):
         self.opt_in()
         out = self.run_hook({"hook_event_name": "UserPromptSubmit", "session_id": "a", "prompt": "fix the bug"})
         self.assertEqual(out.count("\n"), 1)
-        # 480 bytes (was 400 until 0.11.0): the three zone names and the local time are worth about 50 bytes per prompt.
-        self.assertLess(len(out.encode()), 480)
-        self.assertIn("0. **Goals:** (L with ~% bar, G, B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
+        # 520 bytes (480 until 0.19.3, 400 until 0.11.0): the L layout keeps agents from drifting back to old habits.
+        self.assertLess(len(out.encode()), 520)
+        self.assertIn("0. **Goals:** (`**L1.** [~N%] [bar] | aim`, then plain G and B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
                       "5. **Quests:**, 6. **Risks:**, 7. **Ideas:**", out)
         for zone in ("**Agents-Zone** (short step lines: `time` why => what)", "No emoji or square brackets except L progress.", "**Result-Zone**", "**Admin-Zone**"):
             self.assertIn(zone, out)
