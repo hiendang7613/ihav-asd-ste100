@@ -6,8 +6,27 @@ import path from "node:path";
 
 export const PROTOCOL = 1;
 
+// A different plugin's root can leak from the process that launched a Claude worker.
+// An own or unidentified root keeps the existing Codex signal, including older callers.
+function foreignPluginRoot(root) {
+  for (const dir of [".codex-plugin", ".claude-plugin"]) {
+    try {
+      const name = JSON.parse(fs.readFileSync(path.join(root, dir, "plugin.json"), "utf8")).name;
+      if (typeof name === "string" && name) return name !== "ihav-asd-ste100";
+    } catch {
+      // Missing or unreadable metadata cannot identify a foreign plugin.
+    }
+  }
+  // Native installers can remove the caller's old cache while its environment stays live.
+  const [plugins, cache, marketplace, name, version] = path.resolve(root).split(path.sep).slice(-5);
+  return plugins === "plugins" && cache === "cache" && Boolean(marketplace && name && version) &&
+    name !== "ihav-asd-ste100";
+}
+
 export function configDir() {
-  if (process.env.PLUGIN_ROOT) return process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
+  if (process.env.PLUGIN_ROOT && !foreignPluginRoot(process.env.PLUGIN_ROOT)) {
+    return process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
+  }
   return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
 }
 

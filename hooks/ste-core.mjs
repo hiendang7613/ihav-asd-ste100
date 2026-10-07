@@ -17,6 +17,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { configDir } from "./active.mjs";
 
 const OFF_FILE = ".ihav-asd-ste100-off";
 const OFF_EXACT = new Set(["stop ste mode", "normal mode"]);
@@ -54,11 +55,6 @@ function readInput() {
   if (process.stdin.isTTY) return {};
   const raw = fs.readFileSync(0, "utf8").trim();
   return raw ? JSON.parse(raw) : {};
-}
-
-function configDir() {
-  if (process.env.PLUGIN_ROOT) return process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
-  return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
 }
 
 function offMarker(sessionId) {

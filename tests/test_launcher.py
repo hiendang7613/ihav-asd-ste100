@@ -88,6 +88,66 @@ class LauncherTests(unittest.TestCase):
         self.point(self.release("9.9.9"))
         self.assertIn("Reply shape v9:", self.hook())
 
+    def test_a_foreign_plugin_root_keeps_claude_state_and_pointer(self):
+        self.point(self.release("9.9.9"))
+        for manifest_dir in (".codex-plugin", ".claude-plugin"):
+            with self.subTest(manifest=manifest_dir):
+                foreign = self.home / "foreign plugin" / manifest_dir
+                manifest = foreign / manifest_dir / "plugin.json"
+                manifest.parent.mkdir(parents=True)
+                manifest.write_text(json.dumps({"name": "ihav-agent-room", "version": "0.8.1"}))
+                self.env["PLUGIN_ROOT"] = str(foreign)
+                session = "foreign_" + manifest_dir.lstrip(".")
+                self.hook({"hook_event_name": "SessionStart", "session_id": session})
+                self.assertIn("Reply shape v9:", self.hook(dict(PROMPT, session_id=session)))
+                marker = ".ihav-asd-ste100-sessions/" + session + ".version"
+                self.assertEqual((self.home / ".claude" / marker).read_text().strip(), "9.9.9")
+                self.assertFalse((self.home / ".codex" / marker).exists())
+
+    def test_a_deleted_foreign_cache_root_keeps_claude_state_and_pointer(self):
+        self.point(self.release("9.9.9"))
+        foreign = self.home / ".codex/plugins/cache/ihav-agent-room-local/ihav-agent-room/0.8.1"
+        self.assertFalse(foreign.exists())
+        for i, root in enumerate((str(foreign), str(foreign) + "/")):
+            with self.subTest(root=root):
+                self.env["PLUGIN_ROOT"] = root
+                session = "deleted_foreign_%d" % i
+                self.hook({"hook_event_name": "SessionStart", "session_id": session})
+                self.assertIn("Reply shape v9:", self.hook(dict(PROMPT, session_id=session)))
+                marker = ".ihav-asd-ste100-sessions/" + session + ".version"
+                self.assertEqual((self.home / ".claude" / marker).read_text().strip(), "9.9.9")
+                self.assertFalse((self.home / ".codex" / marker).exists())
+
+    def test_codex_keeps_its_host_when_active_root_differs_from_caller(self):
+        base = self.home / ".codex/plugins/cache/ihav/ihav-asd-ste100"
+        caller = self.release("9.9.8", word="v8", where=base)
+        current = self.release("9.9.9", where=base)
+        alias = self.home / "STE caller link"
+        alias.symlink_to(caller, target_is_directory=True)
+        for name, root in (("installed", caller), ("symlink", alias)):
+            with self.subTest(caller=name):
+                self.env.update(PLUGIN_ROOT=str(root), CLAUDE_PLUGIN_ROOT=str(root))
+                session = "codex_" + name
+                self.point(caller)
+                self.hook({"hook_event_name": "SessionStart", "session_id": session})
+                self.point(current)
+                out = self.hook(dict(PROMPT, session_id=session))
+                self.assertTrue(out.startswith("STE REPLY RULES UPDATED to 9.9.9 (was 9.9.8)"), out[:90])
+                self.assertIn("Reply shape v9:", out)
+                marker = ".ihav-asd-ste100-sessions/" + session + ".version"
+                self.assertEqual((self.home / ".codex" / marker).read_text().strip(), "9.9.9")
+                self.assertFalse((self.home / ".claude" / marker).exists())
+
+    def test_an_unidentified_plugin_root_retains_legacy_codex_state(self):
+        for i, relative in enumerate(("unidentified plugin", "cache/marketplace/ihav-agent-room/0.8.1")):
+            with self.subTest(root=relative):
+                self.env["PLUGIN_ROOT"] = str(self.home / relative)
+                session = "unidentified_%d" % i
+                self.hook({"hook_event_name": "SessionStart", "session_id": session})
+                marker = ".ihav-asd-ste100-sessions/" + session + ".version"
+                self.assertTrue((self.home / ".codex" / marker).exists())
+                self.assertFalse((self.home / ".claude" / marker).exists())
+
     def test_every_failed_check_falls_back_to_the_own_copy(self):
         outside = self.release("9.9.9", where=self.home / "elsewhere")
         empty = self.base / "8.8.8"
