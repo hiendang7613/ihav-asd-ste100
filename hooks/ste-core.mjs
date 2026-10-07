@@ -1,4 +1,4 @@
-// ihav-asd-ste100 hook for SessionStart, UserPromptSubmit and PostToolBatch (Claude Code; Codex runs no plugin hooks).
+// ihav-asd-ste100 hook for SessionStart, UserPromptSubmit and PostToolBatch (Claude Code; Codex uses supported common hooks).
 //
 // On by default once the plugin is installed. Opt out everywhere with the file .ihav-asd-ste100-off in
 // $CLAUDE_CONFIG_DIR (default ~/.claude) or $CODEX_HOME (default ~/.codex), or for one process with
@@ -116,6 +116,12 @@ function normalize(prompt) {
   return String(prompt || "").trim().toLowerCase().replace(/[.!\s]+$/, "");
 }
 
+function promptContext(text) {
+  return `${JSON.stringify({ hookSpecificOutput: {
+    hookEventName: "UserPromptSubmit", additionalContext: text
+  } })}\n`;
+}
+
 function run() {
   const offFile = offSwitch();
   if (!offFile) return "";
@@ -137,7 +143,7 @@ function run() {
     if (OFF_EXACT.has(prompt) || OFF_ANYWHERE.test(free)) {
       fs.mkdirSync(path.dirname(marker), { recursive: true });
       fs.writeFileSync(marker, "off\n");
-      return "[ihav-asd-ste100] STE reply mode is off for this session. Confirm in one line, then use your default style.\n";
+      return promptContext("[ihav-asd-ste100] STE reply mode is off for this session. Confirm in one line, then use your default style.\n");
     }
     if (ON_EXACT.has(prompt) || ON_ANYWHERE.test(free)) fs.rmSync(marker, { force: true });
     if (fs.existsSync(marker)) return "";
@@ -150,7 +156,7 @@ function run() {
           `${skillBody()}\n\n${REMINDER} Now ${clock()}.\n`
         : `${REMINDER} Now ${clock()}.\n`;
     remember(input.session_id);  // only after the update text was built
-    return text;
+    return promptContext(text);
   }
   if (event === "PostToolBatch") {
     if (fs.existsSync(marker)) return "";

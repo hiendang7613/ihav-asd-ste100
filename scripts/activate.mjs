@@ -3,7 +3,7 @@
 // Usage:
 //   node scripts/activate.mjs                 # activate the release this script belongs to
 //   node scripts/activate.mjs --root DIR      # activate another installed release
-//   node scripts/activate.mjs --rollback      # go back to the previous release
+//   node scripts/activate.mjs --rollback      # go back to the previous release; warn on legacy prompt text
 //   node scripts/activate.mjs --status        # print the pointer
 //
 // The release must sit inside <config dir>/plugins/cache/ihav/ihav-asd-ste100/. Before the pointer changes, a smoke
@@ -32,18 +32,34 @@ function releaseVersion(root) {
   return JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin", "plugin.json"), "utf8")).version;
 }
 
-// Runs the release's hook core for two events in a throwaway config directory; returns an error text or "".
-function smoke(core) {
+// Forward activation requires JSON. Explicit rollback also recognizes the older STE reminder,
+// preserving recovery to a previous release without treating arbitrary malformed output as valid.
+function smoke(core, allowLegacy) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "ste100-smoke-"));
   try {
     const env = { PATH: process.env.PATH, HOME: home, CLAUDE_CONFIG_DIR: home, CODEX_HOME: home };
     const run = (payload) =>
       spawnSync(process.execPath, [core], { input: JSON.stringify(payload), env, encoding: "utf8", timeout: 10000 });
     const start = run({ hook_event_name: "SessionStart", session_id: "smoke" });
-    if (start.status !== 0 || !start.stdout.startsWith("STE REPLY MODE ACTIVE")) return "SessionStart output is wrong";
+    if (start.status !== 0 || start.stderr.trim() || !start.stdout.startsWith("STE REPLY MODE ACTIVE")) {
+      return { error: "SessionStart output is wrong" };
+    }
     const prompt = run({ hook_event_name: "UserPromptSubmit", session_id: "smoke", prompt: "hi" });
-    if (prompt.status !== 0 || !prompt.stdout.includes("Reply shape")) return "prompt reminder is wrong";
-    return "";
+    if (prompt.status !== 0 || prompt.stderr.trim()) return { error: "prompt reminder is wrong" };
+    try {
+      const data = JSON.parse(prompt.stdout);
+      const specific = data.hookSpecificOutput;
+      if (data.decision !== undefined || data.continue !== undefined ||
+          specific?.hookEventName !== "UserPromptSubmit" ||
+          typeof specific.additionalContext !== "string" ||
+          !specific.additionalContext.includes("Reply shape")) return { error: "prompt context contract is wrong" };
+    } catch {
+      if (allowLegacy && /^\[ihav-asd-ste100\] Reply shape(?: [^:\r\n]+)?:[^\r\n]+$/.test(prompt.stdout.trim())) {
+        return { error: "", legacy: true };
+      }
+      return { error: "prompt context must be valid UserPromptSubmit JSON" };
+    }
+    return { error: "", legacy: false };
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }
@@ -66,11 +82,11 @@ function write(pointer) {
   fs.renameSync(temp, file);
 }
 
-function activate(root, previous) {
+function activate(root, previous, allowLegacy) {
   const core = coreIn(root);
-  if (!core) return `not an installed release inside the ihav plugin cache: ${root}`;
-  const failure = smoke(core);
-  if (failure) return `smoke run failed: ${failure}`;
+  if (!core) return { error: `not an installed release inside the ihav plugin cache: ${root}` };
+  const result = smoke(core, allowLegacy);
+  if (result.error) return { error: `smoke run failed: ${result.error}` };
   const resolved = path.dirname(path.dirname(core));
   if (previous && previous.root && sameDir(previous.root, resolved)) {
     // Activating the release that is already active keeps its rollback target.
@@ -83,7 +99,7 @@ function activate(root, previous) {
     activated: new Date().toISOString(),
     previous: previous && previous.root ? { root: previous.root, version: previous.version } : null,
   });
-  return "";
+  return result;
 }
 
 function main(argv) {
@@ -94,7 +110,8 @@ function main(argv) {
   }
   let root = OWN_ROOT;
   let previous = current;
-  if (argv[0] === "--rollback") {
+  const rollback = argv[0] === "--rollback";
+  if (rollback) {
     if (!current || !current.previous || !current.previous.root) {
       process.stderr.write("no previous release to roll back to\n");
       return 1;
@@ -106,12 +123,15 @@ function main(argv) {
     process.stderr.write("usage: activate.mjs [--root DIR | --rollback | --status]\n");
     return 2;
   }
-  const failure = activate(root, previous);
-  if (failure) {
-    process.stderr.write(`${failure}; the active release is unchanged\n`);
+  const result = activate(root, previous, rollback);
+  if (result.error) {
+    process.stderr.write(`${result.error}; the active release is unchanged\n`);
     return 1;
   }
   process.stdout.write(`${JSON.stringify(readPointer(), null, 2)}\n`);
+  if (result.legacy) {
+    process.stderr.write("Warning: rolled back to legacy plain-text prompt output; Codex 0.160.0 reports invalid JSON and omits this hook context. Activate a JSON-compatible release to restore it.\n");
+  }
   process.stderr.write(`${ensureMissing(readPointer().root)}\n`);
   return 0;
 }

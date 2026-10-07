@@ -50,11 +50,35 @@ class LauncherTests(unittest.TestCase):
         result = subprocess.run(["sh", "-c", LAUNCH], input=json.dumps(payload), capture_output=True, text=True,
                                 env=self.env, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
+        if payload.get("hook_event_name") == "UserPromptSubmit" and result.stdout:
+            data = json.loads(result.stdout)
+            self.assertNotIn("decision", data)
+            self.assertNotIn("continue", data)
+            specific = data["hookSpecificOutput"]
+            self.assertEqual(specific["hookEventName"], "UserPromptSubmit")
+            self.assertIsInstance(specific["additionalContext"], str)
+            return specific["additionalContext"]
         return result.stdout
 
     def activate(self, *args):
         return subprocess.run(["node", str(ROOT / "scripts/activate.mjs"), *args], capture_output=True, text=True,
                               env=self.env, timeout=60)
+
+    def legacy_release(self, version, prompt="[ihav-asd-ste100] Reply shape: legacy STE reminder.\n",
+                       stderr="", exit_code=0):
+        """Replay the old release's output independently of the current JSON core."""
+        target = self.release(version)
+        (target / "hooks/ste-core.mjs").write_text(
+            'import fs from "node:fs";\n'
+            'const input = JSON.parse(fs.readFileSync(0, "utf8"));\n'
+            'if (input.hook_event_name === "SessionStart") {\n'
+            '  process.stdout.write("STE REPLY MODE ACTIVE\\n");\n'
+            '} else {\n'
+            '  process.stdout.write(%s);\n'
+            '  process.stderr.write(%s);\n'
+            '  process.exitCode = %d;\n'
+            '}\n' % (json.dumps(prompt), json.dumps(stderr), exit_code))
+        return target
 
     def test_no_pointer_runs_the_own_copy(self):
         out = self.hook()
@@ -125,7 +149,9 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual((pointer["version"], pointer["launcher_protocol"]), ("9.9.9", 1))
         self.assertEqual(pointer["previous"]["version"], "9.9.8")
         self.assertIn("Reply shape v9:", self.hook())
-        self.assertEqual(self.activate("--rollback").returncode, 0)
+        rollback = self.activate("--rollback")
+        self.assertEqual(rollback.returncode, 0, rollback.stderr)
+        self.assertNotIn("legacy plain-text", rollback.stderr)
         self.assertIn("Reply shape v8:", self.hook())
 
     def test_activating_the_active_release_again_keeps_the_rollback_target(self):
@@ -173,6 +199,67 @@ class LauncherTests(unittest.TestCase):
                 self.assertIn("unchanged", result.stderr)
                 self.assertEqual((self.home / ".ihav/active/ihav-asd-ste100.json").read_text(), before)
         self.assertEqual(self.activate("--bogus").returncode, 2)
+
+    def test_activate_refuses_legacy_plaintext_prompt_and_preserves_pointer(self):
+        good = self.release("9.9.8", word="v8")
+        self.assertEqual(self.activate("--root", str(good)).returncode, 0)
+        pointer = self.home / ".ihav/active/ihav-asd-ste100.json"
+        before = pointer.read_bytes()
+        legacy = self.release("9.9.9")
+        core = legacy / "hooks/ste-core.mjs"
+        core.write_text(core.read_text().replace("return promptContext(text);", "return text;"))
+        result = self.activate("--root", str(legacy))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("prompt context must be valid UserPromptSubmit JSON", result.stderr)
+        self.assertIn("unchanged", result.stderr)
+        self.assertEqual(pointer.read_bytes(), before)
+
+    def test_only_explicit_rollback_can_restore_the_legacy_prior_release(self):
+        current = self.release("9.9.9")
+        self.assertEqual(self.activate("--root", str(current)).returncode, 0)
+        legacy = self.legacy_release("9.9.8")
+        pointer = self.point(current, previous={"root": str(legacy), "version": "9.9.8"})
+        before = pointer.read_bytes()
+        forward = self.activate("--root", str(legacy))
+        self.assertEqual(forward.returncode, 1)
+        self.assertEqual(pointer.read_bytes(), before)
+        rollback = self.activate("--rollback")
+        self.assertEqual(rollback.returncode, 0, rollback.stderr)
+        self.assertIn("rolled back to legacy plain-text", rollback.stderr)
+        self.assertIn("Codex 0.160.0 reports invalid JSON", rollback.stderr)
+        self.assertIn("omits this hook context", rollback.stderr)
+        written = json.loads(pointer.read_bytes())
+        self.assertEqual(json.loads(rollback.stdout), written)
+        self.assertEqual(Path(written["root"]), legacy.resolve())
+        self.assertEqual(written["version"], "9.9.8")
+        self.assertEqual(Path(written["previous"]["root"]), current)
+
+    def test_rollback_still_refuses_bad_output_and_preserves_pointer(self):
+        current = self.release("9.9.9")
+        self.assertEqual(self.activate("--root", str(current)).returncode, 0)
+        legacy = "[ihav-asd-ste100] Reply shape: legacy STE reminder.\n"
+        cases = (
+            ("arbitrary Reply shape text", "", 0),
+            ('{"hookSpecificOutput":', "", 0),
+            (json.dumps({"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": legacy}}), "", 0),
+            (json.dumps({"continue": False, "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit", "additionalContext": legacy}}), "", 0),
+            (json.dumps(legacy), "", 0),
+            (legacy + "unexpected second output\n", "", 0),
+            (legacy, "hook failure", 0),
+            (legacy, "", 1),
+        )
+        for i, (prompt, stderr, exit_code) in enumerate(cases):
+            with self.subTest(prompt=prompt, stderr=stderr, exit_code=exit_code):
+                bad = self.legacy_release("9.8.%d" % i, prompt, stderr, exit_code)
+                pointer = self.point(current, previous={"root": str(bad), "version": bad.name})
+                before = pointer.read_bytes()
+                result = self.activate("--rollback")
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertEqual(result.stdout, "")
+                self.assertIn("unchanged", result.stderr)
+                self.assertNotIn("rolled back to legacy plain-text", result.stderr)
+                self.assertEqual(pointer.read_bytes(), before)
 
 
 if __name__ == "__main__":

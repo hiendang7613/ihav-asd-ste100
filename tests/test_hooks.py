@@ -29,6 +29,14 @@ class HookTests(unittest.TestCase):
         result = subprocess.run(["sh", "-c", command], input=text, capture_output=True, text=True,
                                 env=self.env | (environment or {}) | env, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
+        if isinstance(payload, dict) and payload.get("hook_event_name") == "UserPromptSubmit" and result.stdout:
+            data = json.loads(result.stdout)
+            self.assertNotIn("decision", data)
+            self.assertNotIn("continue", data)
+            specific = data["hookSpecificOutput"]
+            self.assertEqual(specific["hookEventName"], "UserPromptSubmit")
+            self.assertIsInstance(specific["additionalContext"], str)
+            return specific["additionalContext"]
         return result.stdout
 
     def opt_in(self):
