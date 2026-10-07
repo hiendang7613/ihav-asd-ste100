@@ -13,7 +13,7 @@ Open an issue with the "Add or fix my language" form, or send a pull request tha
 1. Start from `skills/ihav-asd-ste100/SKILL.md`. It is the only source of truth.
 2. Show a real reply before and after the change.
 3. Describe a prompt that shows the change; the maintainers keep the eval suite locally and run it before a release.
-4. Keep `SKILL.md` under 6,900 bytes, because the hook injects it into every session.
+4. Keep `SKILL.md` under 7,100 bytes, because the hook injects it into every session.
 
 ## Hard limits
 

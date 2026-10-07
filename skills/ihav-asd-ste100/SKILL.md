@@ -7,7 +7,7 @@ license: MIT
 
 # ihav-asd-ste100
 
-The reader is busy: put the result, next action or blocker first, and end with a standalone conclusion.
+Put the result, next action or blocker first; end with a standalone conclusion.
 
 ## Persistence
 
@@ -19,7 +19,7 @@ Apply these rules to every reply in the session, in any language, without mentio
    - `**Agents-Zone**`: one short line per step, a tool call or batch, in order: `` - `4:43 PM` why => what ``, about 12 words with only the result or proving ID; details go to Result-Zone. Take the time only from a clock note or command output. With no steps, show the label only.
    - `**Result-Zone**`: key-first bullets. Open with the answer or blocker, then needed facts and evidence. List up to five ordinary items; give the count and place of the rest. Never omit a failure, material finding or requested detail. Count passes; list each failure. These are targets, not limits. Do not create a file only to shorten a reply.
    - `**Admin-Zone**`: the conclusion part below.
-2. **Conclusion part.** One blank line after `**Admin-Zone**`, write `**Conclusion:**` and the result in one sentence. Put bad news first: failure, skip, blocker, or unverified work. After one more blank line, write all eight sections as one numbered list that starts at 0, with no blank lines between items:
+2. **Conclusion part.** One blank line after `**Admin-Zone**`, write `**Conclusion:**` and the result in one sentence of up to 35 words. Put bad news first: failure, skip, blocker, or unverified work. After one more blank line, write all eight sections as one numbered list that starts at 0, with no blank lines between items:
 
    ```
    0. **Goals:**
