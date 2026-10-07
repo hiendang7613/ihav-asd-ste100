@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.4 — 2026-10-08
+- Codex keeps the prompt reminder. The UserPromptSubmit hook now prints its text as `hookSpecificOutput` JSON. Codex 0.160 read the old plain line, which starts with `[`, as broken JSON and dropped it. Claude Code accepts both forms.
+- `scripts/activate.mjs` requires that JSON in its smoke run before it moves the pointer. `--rollback` can still return to a release that prints the old plain line; it then warns on stderr that Codex loses the reminder.
+- A `PLUGIN_ROOT` inherited from another plugin, for example when ihav-agent-room starts a Claude worker from Codex, no longer moves a Claude session to Codex state. The hook reads the plugin name from `plugin.json` or from the plugin cache path.
+- The skill states the 35-word Conclusion limit that the checker already enforces. CONTRIBUTING now gives the same 7,100-byte skill budget as the tests.
+- `tests/test_prompt_output_contract.py` runs the shipped launcher as Claude Code and as Codex and requires valid JSON with `hookSpecificOutput`.
+
 ## 0.19.3 — 2026-10-04
 - The checker allows a Conclusion line of up to 35 words, up from 25. An audit of every room found replies of 26 to 56 words, and the first user chose 35.
 - The prompt reminder now shows the L layout, `**L1.** [~N%] [bar] | aim`, and says that G and B lines are plain. One audited room still drew bars on G lines after receiving the new rules. The reminder limit in the tests rises from 480 to 520 bytes.
