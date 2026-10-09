@@ -504,7 +504,7 @@ def compass_alone_problems(text):
 # --- Profile room: a post of Agent Room --------------------------------------------------------------------------------
 ROOM_LABEL = re.compile(r"\*\*\s*(Agents|Result|Admin)\s*-\s*Zone\s*:?\s*\*\*", re.I)
 ROOM_ANY_ZONE = re.compile(r"\*\*[^*]{1,30}-Zone\*\*", re.I)
-ROOM_SECTION = re.compile(r"(?:\b([0-9])\.\s*)?\*\*\s*(Goals|Done|Doing|Todos|Pending|Quests|Risks|Ideas)\s*:?\s*\*\*:?", re.I)
+ROOM_SECTION = re.compile(r"(?:\b([0-9]|X)\.\s*)?\*\*\s*(Goals|Done|Doing|Todos|Pending|Quests|Risks|Ideas|Compass)\s*:?\s*\*\*:?", re.I)
 ROOM_KEPT = {"Todos": 3, "Pending": 4, "Quests": 5}
 ROOM_CONCLUSION = re.compile(r"\*\*\s*Conclusion\s*:?\s*\*\*:?\s*", re.I)
 ROOM_STATUS = re.compile(r"^(done|not done|unsure|waiting on [^—–:]+?)\s*(?:[—–:]|\s-\s)\s*", re.I)
@@ -522,7 +522,8 @@ def room_bullets(zone):
 
 
 def room_check(text):
-    """Check one post of Agent Room. The room stores a post as one line, so work on the text with whitespace folded and
+    """Check one post of Agent Room, including optional X. Compass before numbered status sections.
+    The room stores a post as one line, so work on the text with whitespace folded and
     each inline code span hidden behind one placeholder token (it counts as one word)."""
     hidden = []
 
@@ -530,8 +531,11 @@ def room_check(text):
         hidden.append(match.group(0))
         return "\x00%d\x00" % (len(hidden) - 1)
 
+    def restore(part):
+        return re.sub("\x00([0-9]+)\x00", lambda m: hidden[int(m.group(1))], part)
+
     def show(part):
-        return re.sub("\x00([0-9]+)\x00", lambda m: hidden[int(m.group(1))], part)[:40]
+        return restore(part)[:40]
 
     flat = re.sub(r"\s+", " ", re.sub(r"`[^`]*`", hide, mask_code(text.replace("`<a>`", "<a>")))).strip()
     violations, warnings = [], []
@@ -599,10 +603,20 @@ def room_check(text):
     if sentence_count(sentence) > 1:
         violations.append("The Conclusion has %d sentences; write one." % sentence_count(sentence))
 
+    compass, quests = [], []
     for index, section in enumerate(sections):
         number, label = section.group(1), section.group(2).title()
         body = admin[section.end():sections[index + 1].start() if index + 1 < len(sections) else len(admin)].strip()
-        stats["sections"].append(ROOM_KEPT.get(label))
+        stats["sections"].append(COMPASS if label == "Compass" else ROOM_KEPT.get(label))
+        if label == "Compass":
+            if number != "X":
+                violations.append("Write the section as 'X. **Compass:**'.")
+            lead, items = room_bullets(body)
+            if lead or not items:
+                violations.append("X. **Compass:** holds '- ' items and is omitted when empty.")
+            # Restore code only after finding boundaries: quoted section labels stay quoted.
+            compass.append((COMPASS, label, restore(lead), ["   - " + restore(item) for item in items]))
+            continue
         if label not in ROOM_KEPT:
             violations.append("The room keeps only 3. **Todos:**, 4. **Pending:** and 5. **Quests:**; found %s." % label)
             continue
@@ -611,6 +625,7 @@ def room_check(text):
         if not body:
             violations.append("Leave out %d. **%s:** when it has no items." % (ROOM_KEPT[label], label))
         elif label == "Quests":
+            quests.append(body)
             questions = [q.strip() for q in ROOM_QUESTION.split(body) if q.strip()]
             if [int(re.match(r"Q([0-9]+)", q).group(1)) for q in questions if re.match(r"Q[0-9]+\.", q)] != list(range(1, len(questions) + 1)):
                 violations.append("Number the questions Q1., Q2., ... in order: %s" % show(body))
@@ -627,6 +642,8 @@ def room_check(text):
             if label == "Pending":
                 warnings.extend("Pending item '%s' should start with 'Waiting on <who or what>:'." % show(item)
                                 for item in items if not re.match(r"(?:\*\*)?Waiting on\b", item))
+    violations.extend(problem.replace("above 0. **Goals:**", "before the numbered status sections")
+                      for problem in compass_problems(stats["sections"], compass, quests))
     return {"ok": not violations, "violations": violations, "warnings": warnings, "stats": stats}
 
 

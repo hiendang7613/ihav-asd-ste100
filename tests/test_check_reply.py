@@ -523,6 +523,35 @@ class RoomProfileTests(unittest.TestCase):
         for kept in ("0. **Goals:** - an aim", "6. **Risks:** - a risk", "7. **Ideas:** - an idea", "1. **Done:** - work", "2. **Doing:** - work"):
             self.assert_fails(ROOM.replace("3. **Todos:**", kept + " 3. **Todos:**"), "keeps only 3. **Todos:**")
         self.assert_fails(ROOM.replace("3. **Todos:** - Hỏi lại tm", "3. **Todos:**"), "Leave out 3. **Todos:** when it has no items")
+
+    def test_optional_compass_uses_the_same_rules_before_room_status_sections(self):
+        compass = "X. **Compass:** - **V1.** [~95%] Keep native controls. - **More:** 47 other lines; type `x` to see all. "
+        report = ROOM.replace("3. **Todos:**", compass + "3. **Todos:**")
+        checked = self.room(report)
+        self.assertTrue(checked["ok"], checked)
+        self.assertEqual(checked["stats"]["sections"], [-1, 3, 4, 5])
+        self.assertEqual(checked["stats"]["conclusion_words"], self.room(ROOM)["stats"]["conclusion_words"])
+        self.assert_fails(report + " " + compass, "once")
+        self.assert_fails(ROOM + " " + compass, "before the numbered status sections")
+        self.assert_fails(report.replace("[~95%]", "[~101%]"), "use 0 to 100")
+        self.assert_fails(report.replace("type `x`", "type x"), "More item needs the count")
+        self.assert_fails(report.replace(compass, "X. **Compass:** "), "omitted when empty")
+        self.assert_fails(report.replace("X. **Compass:**", "0. **Compass:**"), "Write the section as 'X.")
+        too_many = "X. **Compass:** " + " ".join("- **V%d.** Keep it simple." % n for n in range(6)) + " "
+        self.assert_fails(report.replace(compass, too_many), "at most 5 compass lines")
+        conflict = compass.replace("- **More:**", "- **X!** V1: proposed change; choose in Quests. - **More:**")
+        self.assertTrue(self.room(report.replace(compass, conflict))["ok"])
+        without_quests = report.replace(compass, conflict).split("5. **Quests:**")[0]
+        self.assert_fails(without_quests, "needs its choice")
+        quoted = report.replace("Keep native controls.", "Keep `5. **Quests:**` quoted.")
+        self.assertTrue(self.room(quoted)["ok"], self.room(quoted))
+        only_compass = ROOM.split("3. **Todos:**")[0] + compass
+        self.assertTrue(self.room(only_compass)["ok"], self.room(only_compass))
+        multiline = report.replace("X. **Compass:**", "\nX. **Compass:**\n").replace(" - **", "\n- **")
+        self.assertTrue(self.room(multiline)["ok"], self.room(multiline))
+        self.assert_fails(report.replace("**V1.**", "**Vision.**"), "Section X item must be")
+        quoted_quest = without_quests.replace("proposed change;", "`5. **Quests:** Q1. <a> yes`; ")
+        self.assert_fails(quoted_quest, "needs its choice")
         self.assert_fails(ROOM.replace("5. **Quests:** Q1. Chờ thêm hay bỏ tm? <a> chờ thêm | (b) bỏ tm", "5. **Quests:**"), "Leave out 5. **Quests:**")
         self.assert_fails(ROOM.replace("4. **Pending:**", "5. **Pending:**"), "Write the section as '4. **Pending:**'")
         self.assertTrue(self.room(ROOM[:ROOM.index(" 3. **Todos:**")])["ok"])  # a Conclusion alone is enough
