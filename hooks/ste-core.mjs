@@ -41,10 +41,9 @@ const COMPASS_MAX_LINE = 400;
 const COMPASS_LINE = /^[-*]\s+([A-Za-z][0-9]+)(\?)?\s+(\S.*)$/;
 const COMPASS_ALL = new Set(["x", "compass", "/x", "/compass"]);  // the prompts that ask for the Compass alone
 const COMPASS_RULE =
-  "Show X. **Compass:** first, above 0. **Goals:**: at most 5 of these lines that this reply touches, as `- **ID.** text`, " +
-  "then ``- **More:** N other lines; type `x` to see all.`` when more exist. A step, plan or request that conflicts with a " +
-  "line adds `- **X!** ID: what, why; choose in Quests.` and a Quests choice; with no conflict write nothing. " +
-  "No X in a small or exact-output reply.";
+  "Show X. **Compass:** first, above 0. **Goals:**, up to 5 lines this reply touches as `- **ID.** text`, then " +
+  "``- **More:** N other lines; type `x` to see all.`` if more exist; a conflict with a line adds " +
+  "`- **X!** ID: what, why; choose in Quests.` Small or exact-output replies get no X.";
 
 // The first compass file from cwd up to the git root, or "". Without a git root only cwd itself is searched.
 function compassFile(cwd) {
