@@ -155,6 +155,172 @@ class HookTests(unittest.TestCase):
         self.assertTrue(marker.is_file())
         self.assertEqual(self.run_hook({**stop, "prompt": "next"}, environment=environment), "")
 
+    # --- Compass: <project>/.ihav_space/ihav-asd-ste100/compass.md --------------------------------------------------
+
+    COMPASS = ("# Compass of the sample project. Edit: remove the ? to activate a line, delete a line to strike it.\n"
+               "## V Vision\n- V1 Connect many vendors; own no complex harness.\n- V2 The admin chats only through the UI.\n"
+               "\nnot a line\n- V3: a colon after the ID is ignored\n- W5? A proposed line stays out.\n"
+               "## C Code\n* C1 Names are easy to read.\n")
+
+    def project(self, text=None, name="project", git=".git", where=""):
+        """A project folder with a git root marker and, unless text is None, a compass file. Returns the project path."""
+        project = self.home / name
+        folder = project / where if where else project
+        (project / git).mkdir(parents=True) if git == ".git" else project.mkdir(parents=True, exist_ok=True)
+        if git == "gitfile":
+            (project / ".git").write_text("gitdir: /elsewhere\n")
+        if text is not None:
+            (folder / ".ihav_space/ihav-asd-ste100").mkdir(parents=True)
+            (folder / ".ihav_space/ihav-asd-ste100/compass.md").write_text(text, encoding="utf-8")
+        return project
+
+    def prompt(self, cwd, text="fix the bug", session="c", **extra):
+        payload = {"hook_event_name": "UserPromptSubmit", "session_id": session, "prompt": text}
+        if cwd is not None:
+            payload["cwd"] = str(cwd)
+        return self.run_hook(payload, **extra)
+
+    def test_compass_file_adds_the_active_lines_to_the_reminder_and_nothing_else(self):
+        plain = self.prompt(None)
+        out = self.prompt(self.project(self.COMPASS), session="d")
+        self.assertTrue(out.startswith(plain.split(" Now ")[0]))
+        self.assertEqual(out.count("\n"), 1)
+        self.assertRegex(out, r" Now (1[0-2]|[1-9]):[0-5][0-9] (AM|PM)\.\n$")
+        self.assertIn("Compass (admin's core views, keep every reply consistent with them): "
+                      "V1 Connect many vendors; own no complex harness; V2 The admin chats only through the UI; C1 Names are easy to read.", out)
+        self.assertIn("Show X. **Compass:** first, above 0. **Goals:**", out)
+        self.assertIn("**X!** ID: what, why; choose in Quests.", out)
+        for ignored in ("W5", "A proposed line", "Proposed", "V3", "colon", "not a line", "Edit:"):
+            self.assertNotIn(ignored, out)
+
+    def test_no_compass_file_leaves_the_reminder_exactly_as_before(self):
+        reference = self.prompt(None).split(" Now ")[0]
+        for cwd in (None, self.project(None), "/no/such/folder", 5, ""):
+            with self.subTest(cwd=cwd):
+                out = self.prompt(cwd, session="e")
+                self.assertEqual(out.split(" Now ")[0], reference)
+                self.assertNotIn("Compass", out)
+                self.assertLess(len(out.encode()), 520)
+        only_proposed = self.project("- W5? Only a proposed line.\n## no active line\n", name="proposed")
+        self.assertEqual(self.prompt(only_proposed, session="f").split(" Now ")[0], reference)
+
+    def test_compass_is_searched_from_cwd_up_to_the_git_root_and_the_first_file_wins(self):
+        project = self.project("- V1 Root line.\n")
+        deep = project / "src/deep"
+        deep.mkdir(parents=True)
+        self.assertIn("V1 Root line", self.prompt(deep))
+        near = project / "src"
+        (near / ".ihav_space/ihav-asd-ste100").mkdir(parents=True)
+        (near / ".ihav_space/ihav-asd-ste100/compass.md").write_text("- V9 Nearer line.\n")
+        out = self.prompt(deep, session="g")
+        self.assertIn("V9 Nearer line", out)
+        self.assertNotIn("Root line", out)
+        # A worktree has a .git file; a folder without any git root searches only itself.
+        worktree = self.project("- V1 Worktree line.\n", name="worktree", git="gitfile")
+        (worktree / "sub").mkdir()
+        self.assertIn("V1 Worktree line", self.prompt(worktree / "sub", session="h"))
+        loose = self.home / "loose"
+        (loose / "child").mkdir(parents=True)
+        (loose / ".ihav_space/ihav-asd-ste100").mkdir(parents=True)
+        (loose / ".ihav_space/ihav-asd-ste100/compass.md").write_text("- V1 Parent of a folder with no git root.\n")
+        self.assertNotIn("Compass", self.prompt(loose / "child", session="i"))
+        self.assertIn("Compass", self.prompt(loose, session="i"))
+
+    def test_the_x_prompt_also_lists_the_proposed_lines_and_no_other_prompt_does(self):
+        project = self.project(self.COMPASS)
+        for index, text in enumerate(("x", " Compass. ", "/x", "/compass")):
+            with self.subTest(prompt=text):
+                out = self.prompt(project, text, session="x%d" % index)
+                self.assertIn("Proposed, not enforced (for the x reply only): W5 A proposed line stays out.", out)
+                self.assertIn("V1 Connect many vendors", out)
+        for index, text in enumerate(("x marks the spot", "show the compass", "xx")):
+            with self.subTest(prompt=text):
+                self.assertNotIn("Proposed", self.prompt(project, text, session="y%d" % index))
+
+    def test_session_start_and_a_rules_update_carry_the_compass_once(self):
+        project = self.project(self.COMPASS)
+        start = self.run_hook({"hook_event_name": "SessionStart", "session_id": "s", "cwd": str(project)})
+        self.assertTrue(start.startswith("STE REPLY MODE ACTIVE"))
+        self.assertEqual(start.count("Compass (admin's core views"), 1)
+        self.assertIn("V2 The admin chats only through the UI", start)
+        self.assertNotIn("W5", start)
+        bare = self.run_hook({"hook_event_name": "SessionStart", "session_id": "t", "cwd": str(self.project(None, name="bare"))})
+        self.assertNotIn("Compass (admin's", bare)
+        update = self.prompt(project, session="u", IHAV_STE100_BRIDGED="1")
+        self.assertIn("STE REPLY RULES UPDATED", update)
+        self.assertEqual(update.count("Compass (admin's core views"), 1)
+
+    def test_the_compass_follows_the_mode_switches(self):
+        project = self.project(self.COMPASS)
+        self.assertIn("Compass (admin's", self.prompt(project, session="m"))
+        self.prompt(project, "stop ste mode", session="m")
+        self.assertEqual(self.prompt(project, session="m"), "")
+        self.assertEqual(self.prompt(project, session="n", IHAV_ASD_STE100="off"), "")
+
+    def test_compass_lines_are_cleaned_and_a_foreign_file_format_is_ignored(self):
+        text = "\ufeff- V1\tA  spaced\t line.\r\n- V2 Two sentences. Kept;\r\n## - V3 heading\r\n  - V4 indented\r\n-V5 no space\r\n- 7 digit first\r\n- VV1 two letters\r\n"
+        out = self.prompt(self.project(text), session="p")
+        self.assertIn("): V1 A spaced line; V2 Two sentences. Kept. Show X.", out)
+        self.assertNotIn("V3", out)
+        self.assertNotIn("V4", out)
+        self.assertNotIn("V5", out)
+        self.assertNotIn("VV1", out)
+
+    def test_an_unreadable_compass_file_never_removes_the_reminder(self):
+        project = self.project(self.COMPASS)
+        file = project / ".ihav_space/ihav-asd-ste100/compass.md"
+        file.chmod(0)
+        try:
+            if os.access(file, os.R_OK):
+                self.skipTest("this user can read a mode 000 file")
+            out = self.prompt(project)
+            self.assertIn("Reply shape", out)
+            self.assertNotIn("Compass", out)
+            self.assertIn("STE REPLY MODE ACTIVE", self.run_hook({"hook_event_name": "SessionStart", "session_id": "r", "cwd": str(project)}))
+        finally:
+            file.chmod(0o644)
+
+    def test_a_folder_or_a_pipe_in_place_of_the_compass_file_is_ignored_without_waiting(self):
+        folder = self.project(None, name="folder")
+        (folder / ".ihav_space/ihav-asd-ste100/compass.md").mkdir(parents=True)
+        self.assertNotIn("Compass", self.prompt(folder))
+        pipe = self.project(None, name="pipe")
+        (pipe / ".ihav_space/ihav-asd-ste100").mkdir(parents=True)
+        os.mkfifo(pipe / ".ihav_space/ihav-asd-ste100/compass.md")
+        out = self.prompt(pipe, session="q")
+        self.assertIn("Reply shape", out)
+        self.assertNotIn("Compass", out)
+
+    def test_a_long_or_huge_compass_is_capped_and_the_reminder_says_how_many_lines_were_cut(self):
+        lines = "".join("- V%d Line number %d of the long project list.\n" % (n, n) for n in range(1, 101))
+        out = self.prompt(self.project(lines))
+        self.assertIn("V60 Line number 60", out)
+        self.assertNotIn("V61 ", out)
+        self.assertIn("40 more active lines cut (over 60 lines or 4 KB).", out)
+        wide = "".join("- A%d %s\n" % (n, "word " * 70) for n in range(1, 40))
+        out = self.prompt(self.project(wide, name="wide"), session="w")
+        self.assertLess(len(out.encode()), 520 + 4096 + 700)
+        self.assertRegex(out, r"\d+ more active lines cut")
+        huge = "- V1 First line stays.\n" + "".join("- V%d Filler line number %d.\n" % (n, n) for n in range(2, 300000))
+        self.assertGreater(len(huge), 5_000_000)
+        out = self.prompt(self.project(huge, name="huge"), session="z")
+        self.assertIn("V1 First line stays", out)
+        self.assertRegex(out, r"\d+\+ more active lines cut")
+        self.assertLess(len(out.encode()), 520 + 4096 + 700)
+
+    def test_codex_gets_the_compass_from_the_same_core(self):
+        environment = self.env.copy()
+        environment.pop("CLAUDE_CONFIG_DIR")
+        environment.pop("CLAUDE_PLUGIN_ROOT")
+        environment["PLUGIN_ROOT"] = str(ROOT)
+        project = self.project(self.COMPASS)
+        out = self.prompt(project, environment=environment)
+        self.assertIn("Compass (admin's core views, keep every reply consistent with them): V1 Connect many vendors", out)
+        start = self.run_hook({"hook_event_name": "SessionStart", "session_id": "k", "cwd": str(project)}, environment=environment)
+        self.assertIn("V2 The admin chats only through the UI", start)
+        self.assertNotIn("W5", start)
+
+
     def test_bad_input_and_missing_root_never_fail(self):
         self.opt_in()
         self.assertEqual(self.run_hook("not json"), "")

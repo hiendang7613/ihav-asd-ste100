@@ -10,6 +10,8 @@
 // The model has no clock: the reminder and PostToolBatch give it the local time, so each Agents-Zone step can carry
 // a real time. PostToolBatch fires once per batch of tool calls and adds about a dozen tokens of context.
 // hooks/ste-mode.mjs is a stable launcher that imports this file from the active release (see that file).
+// Compass: when <project>/.ihav_space/ihav-asd-ste100/compass.md exists (searched from the hook input's cwd up to the git
+// root, first file wins), SessionStart and UserPromptSubmit also carry its active lines (see compassBlock). No file, no change.
 // When the active version differs from the one a session last saw, the next prompt re-injects the skill body once.
 // Any failure exits 0 with no output: this hook must never block a session or a prompt.
 
@@ -29,6 +31,101 @@ export const REMINDER =
   "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Goals:** (`**L1.** [~N%] [bar] | aim`, then plain G and B), 1. **Done:**, " +
   "2. **Doing:**, 3. **Todos:**, 4. **Pending:**, 5. **Quests:**, 6. **Risks:**, 7. **Ideas:**; items are sub-items with a bold key; " +
   '`<a>` = recommended. No emoji or square brackets except L progress. "stop ste mode" turns this off.';
+
+const COMPASS_PATH = path.join(".ihav_space", "ihav-asd-ste100", "compass.md");
+const COMPASS_READ_MAX = 128 * 1024;  // a larger file is read only this far
+const COMPASS_MAX_LINES = 60;
+const COMPASS_MAX_BYTES = 4096;
+const COMPASS_MAX_LINE = 400;
+// "- V1 text" is active, "- V1? text" is proposed. Headings, blank lines and anything else are ignored.
+const COMPASS_LINE = /^[-*]\s+([A-Za-z][0-9]+)(\?)?\s+(\S.*)$/;
+const COMPASS_ALL = new Set(["x", "compass", "/x", "/compass"]);  // the prompts that ask for the Compass alone
+const COMPASS_RULE =
+  "Show X. **Compass:** first, above 0. **Goals:**: at most 5 of these lines that this reply touches, as `- **ID.** text`, " +
+  "then ``- **More:** N other lines; type `x` to see all.`` when more exist. A step, plan or request that conflicts with a " +
+  "line adds `- **X!** ID: what, why; choose in Quests.` and a Quests choice; with no conflict write nothing. " +
+  "No X in a small or exact-output reply.";
+
+// The first compass file from cwd up to the git root, or "". Without a git root only cwd itself is searched.
+function compassFile(cwd) {
+  const start = path.resolve(cwd);
+  let root = start;
+  for (let dir = start, depth = 0; depth < 64; depth++) {
+    if (fs.existsSync(path.join(dir, ".git"))) {  // a worktree has .git as a file
+      root = dir;
+      break;
+    }
+    if (path.dirname(dir) === dir) break;
+    dir = path.dirname(dir);
+  }
+  for (let dir = start; ; dir = path.dirname(dir)) {
+    const file = path.join(dir, COMPASS_PATH);
+    if (fs.existsSync(file)) return file;
+    if (dir === root) return "";
+  }
+}
+
+// Active and proposed lines of a compass file's text.
+export function parseCompass(text) {
+  const active = [];
+  const proposed = [];
+  for (const raw of text.replace(/^\uFEFF/, "").split(/\r?\n/)) {
+    const match = COMPASS_LINE.exec(raw);
+    if (!match) continue;
+    const clean = match[3].replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().replace(/[.;]+$/, "");
+    (match[2] ? proposed : active).push(`${match[1]} ${clean.slice(0, COMPASS_MAX_LINE)}`);
+  }
+  return { active, proposed };
+}
+
+// Joins as many lines as the caps allow. Returns the text and how many lines were left out.
+function fit(lines) {
+  const shown = [];
+  let bytes = 0;
+  for (const line of lines) {
+    const size = Buffer.byteLength(line) + 2;
+    if (shown.length >= COMPASS_MAX_LINES || bytes + size > COMPASS_MAX_BYTES) break;
+    shown.push(line);
+    bytes += size;
+  }
+  return { text: shown.join("; "), cut: lines.length - shown.length };
+}
+
+// The Compass text for the reminder: the active lines of the project's compass file, and with all=true also the
+// proposed ones. Returns "" for no file, an unreadable or huge file, or no lines. Never throws and never reads twice.
+function compassBlock(cwd, all) {
+  try {
+    if (typeof cwd !== "string" || !cwd) return "";
+    const file = compassFile(cwd);
+    if (!file || !fs.statSync(file).isFile()) return "";
+    const fd = fs.openSync(file, "r");
+    let text;
+    let truncated = false;
+    try {
+      const size = fs.fstatSync(fd).size;
+      const buffer = Buffer.alloc(Math.min(size, COMPASS_READ_MAX));
+      text = buffer.toString("utf8", 0, fs.readSync(fd, buffer, 0, buffer.length, 0));
+      truncated = size > buffer.length;
+    } finally {
+      fs.closeSync(fd);
+    }
+    if (truncated) text = text.slice(0, text.lastIndexOf("\n") + 1);  // drop the partial last line
+    const { active, proposed } = parseCompass(text);
+    const lines = fit(active);
+    const extra = all ? fit(proposed) : { text: "", cut: 0 };
+    if (!lines.text && !extra.text) return "";
+    const more = (count) => `${count}${truncated ? "+" : ""}`;
+    let block = "";
+    if (lines.text) {
+      block = `Compass (admin's core views, keep every reply consistent with them): ${lines.text}.`;
+      if (lines.cut || truncated) block += ` ${more(lines.cut)} more active lines cut (over ${COMPASS_MAX_LINES} lines or 4 KB).`;
+    }
+    if (extra.text) block += ` Proposed, not enforced (for the x reply only): ${extra.text}.`;
+    return `${block} ${COMPASS_RULE}`.trim();
+  } catch {
+    return "";  // a compass problem must never remove the rest of the reminder
+  }
+}
 
 // Local wall-clock time as "4:43 PM" (plain ASCII; the Intl formatter can insert a narrow no-break space).
 export function clock(now = new Date()) {
@@ -127,9 +224,11 @@ function run() {
 
   if (event === "SessionStart") {
     if (fs.existsSync(marker)) return "";
+    const compass = compassBlock(input.cwd, false);
     const text =
       "STE REPLY MODE ACTIVE (on by default). The rules below apply to every reply. " +
-      `"stop ste mode" turns them off for this session; create ${offFile} to turn them off everywhere.\n\n${skillBody()}\n`;
+      `"stop ste mode" turns them off for this session; create ${offFile} to turn them off everywhere.\n\n${skillBody()}\n` +
+      (compass ? `\n${compass}\n` : "");
     remember(input.session_id);  // only after the body was read, so a failed read retries on the next event
     return text;
   }
@@ -146,11 +245,13 @@ function run() {
     // A session started on a release older than 0.18.0 has no version marker. When the bridge forwarder runs it,
     // treat it as an old session so it receives the current rules once.
     const known = seen(input.session_id) || (process.env.IHAV_STE100_BRIDGED === "1" ? "a release before 0.18.0" : "");
+    const compass = compassBlock(input.cwd, COMPASS_ALL.has(prompt));
+    const reminder = `${REMINDER}${compass ? ` ${compass}` : ""} Now ${clock()}.\n`;
     const text =
       known && known !== version()
         ? `STE REPLY RULES UPDATED to ${version()} (was ${known}). The rules below replace the earlier ones.\n\n` +
-          `${skillBody()}\n\n${REMINDER} Now ${clock()}.\n`
-        : `${REMINDER} Now ${clock()}.\n`;
+          `${skillBody()}\n\n${reminder}`
+        : reminder;
     remember(input.session_id);  // only after the update text was built
     return promptContext(text);
   }
