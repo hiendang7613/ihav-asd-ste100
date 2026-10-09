@@ -29,3 +29,5 @@ claude plugin validate --strict .
 ```
 
 `claude plugin eval .` calls paid models. Say in the pull request if you ran it, with the model, runs and cost.
+
+`examples/room-report-samples.json` is a copy of `tests/fixtures/report-samples.json` in ihav-agent-room-ui. The two copies must have equal sha256 hashes (`shasum -a 256` on each; `tests/test_room_samples.py` prints this one). Change both together or neither.

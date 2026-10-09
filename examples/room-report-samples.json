@@ -1,0 +1,141 @@
+[
+  {
+    "name": "waiting-on-with-pending-and-quests",
+    "why": "A leader report with all three zones: status waiting on a member, a Pending line, one question with a recommended option.",
+    "text": "**Agents-Zone** - guess => admin tests that both members answer, before real work - read inbox => `to` answered, `tm` silent **Result-Zone** - Đếm file: 4 file .js trong src/ (to #6) - tm: chưa có kết quả lệnh sleep (not checked) **Admin-Zone** **Conclusion:** waiting on tm — to đã đếm xong, tm chưa trả lời. 4. **Pending:** - Waiting on tm: lệnh `sleep 70; date` 5. **Quests:** Q1. Chờ thêm hay bỏ tm? <a> chờ thêm 2 phút | (b) bỏ tm",
+    "expect": {
+      "zoned": true,
+      "status": "waiting on tm",
+      "kind": "waiting",
+      "headline": "to đã đếm xong, tm chưa trả lời.",
+      "steps": 2,
+      "bullets": ["Đếm file: 4 file .js trong src/ (to #6)", "tm: chưa có kết quả lệnh sleep (not checked)"],
+      "todos": [],
+      "pending": ["Waiting on tm: lệnh `sleep 70; date`"],
+      "asksAdmin": true,
+      "questions": [
+        { "id": "Q1", "options": ["a", "b"], "recommended": "a" }
+      ],
+      "listLine": "waiting on tm — to đã đếm xong, tm chưa trả lời."
+    },
+    "valid": true
+  },
+  {
+    "name": "not-done-with-weak-evidence",
+    "why": "Bad news first: not done, one fact marked (not checked), one Todos line, no Quests section so nothing asks the admin.",
+    "text": "**Agents-Zone** - guess => admin wants check.js green, to ship the build today - ran the check script => exit 1 **Result-Zone** - Lệnh: `node check.js` thoát mã 1 (to #7) - Nguyên nhân: chưa xem từng lỗi (not checked) **Admin-Zone** **Conclusion:** not done — check.js báo 3 trong 8 kiểm tra lỗi; chưa sửa gì. 3. **Todos:** - Xem từng lỗi của check.js",
+    "expect": {
+      "zoned": true,
+      "status": "not done",
+      "kind": "not-done",
+      "headline": "check.js báo 3 trong 8 kiểm tra lỗi; chưa sửa gì.",
+      "steps": 2,
+      "bullets": ["Lệnh: `node check.js` thoát mã 1 (to #7)", "Nguyên nhân: chưa xem từng lỗi (not checked)"],
+      "todos": ["Xem từng lỗi của check.js"],
+      "pending": [],
+      "asksAdmin": false,
+      "questions": [],
+      "listLine": "not done — check.js báo 3 trong 8 kiểm tra lỗi; chưa sửa gì."
+    },
+    "valid": true
+  },
+  {
+    "name": "member-three-zones",
+    "why": "A member writes the same three zones as the leader, with the guess line first. The page shows the admin only its Result-Zone; its Agents-Zone and Admin-Zone stay behind the disclosure, for the leader and the peers.",
+    "text": "**Agents-Zone** - guess => admin wants a file count, to size the next job - run the count command => 4 files **Result-Zone** Có 4 file .js trong src/. - Lệnh: `find src -name '*.js' | wc -l` thoát mã 0 **Admin-Zone** **Conclusion:** done — đã đếm xong, kết quả là 4 file.",
+    "expect": {
+      "zoned": true,
+      "status": "done",
+      "kind": "done",
+      "headline": "đã đếm xong, kết quả là 4 file.",
+      "steps": 2,
+      "bullets": ["Lệnh: `find src -name '*.js' | wc -l` thoát mã 0"],
+      "todos": [],
+      "pending": [],
+      "asksAdmin": false,
+      "questions": [],
+      "listLine": "done — đã đếm xong, kết quả là 4 file."
+    },
+    "valid": true
+  },
+  {
+    "name": "one-fact-no-zones",
+    "why": "A one-fact post is one sentence with no zones.",
+    "text": "Có 4 file .js trong src/ (`find src -name '*.js' | wc -l`).",
+    "expect": {
+      "zoned": false,
+      "status": null,
+      "kind": null,
+      "headline": "Có 4 file .js trong src/ (`find src -name '*.js' | wc -l`).",
+      "steps": 0,
+      "bullets": [],
+      "todos": [],
+      "pending": [],
+      "asksAdmin": false,
+      "questions": [],
+      "listLine": "Có 4 file .js trong src/ (`find src -name '*.js' | wc -l`)."
+    },
+    "valid": true
+  },
+  {
+    "name": "old-report-without-zones",
+    "why": "A report from before the zones: status, key lines and Needs you: in one run. The room shows it whole as the Result and still reads its status and question.",
+    "text": "done — 6/7 thành viên cùng chọn: KHÔNG mặc định 1000. - Số tin mở đầu: claude #99 - Waiting on glm, step (chưa trả lời). Needs you: 1. Số tin mở đầu? a) 300 b) 100",
+    "expect": {
+      "zoned": false,
+      "status": "done",
+      "kind": "done",
+      "headline": "6/7 thành viên cùng chọn: KHÔNG mặc định 1000.",
+      "steps": 0,
+      "bullets": ["Số tin mở đầu: claude #99", "Waiting on glm, step (chưa trả lời)."],
+      "todos": [],
+      "pending": [],
+      "asksAdmin": true,
+      "questions": [
+        { "id": "Q1", "options": ["a", "b"], "recommended": null }
+      ],
+      "listLine": "done — 6/7 thành viên cùng chọn: KHÔNG mặc định 1000."
+    },
+    "valid": true
+  },
+  {
+    "name": "unknown-label-falls-back-to-result",
+    "why": "A label the room does not know is plain text: the whole post is the Result.",
+    "text": "**Notes-Zone** Có 4 file .js trong src/. - Lệnh: `find src -name '*.js' | wc -l` thoát mã 0",
+    "expect": {
+      "zoned": false,
+      "status": null,
+      "kind": null,
+      "headline": "**Notes-Zone** Có 4 file .js trong src/.",
+      "steps": 0,
+      "bullets": ["Lệnh: `find src -name '*.js' | wc -l` thoát mã 0"],
+      "todos": [],
+      "pending": [],
+      "asksAdmin": false,
+      "questions": [],
+      "listLine": "**Notes-Zone** Có 4 file .js trong src/."
+    },
+    "valid": true
+  },
+  {
+    "name": "invalid-six-lines-two-recommended-two-sentences",
+    "why": "Breaks three limits: six Result lines (at most 5), two <a> for Q1 (exactly one), a Conclusion of two sentences (one). The room still parses it; only a checker marks it invalid.",
+    "text": "**Agents-Zone** - guess => admin wants every test green before shipping - ran the test suite => 12 of 12 pass **Result-Zone** - Tests: 12 of 12 pass (`pnpm test`) - Build: ok (`pnpm build:web`) - Types: ok (`pnpm typecheck`) - Lint: not run (not checked) - Docs: README updated (#41) - Deploy: not started **Admin-Zone** **Conclusion:** done — all tests pass. The build and the types are fine too. 5. **Quests:** Q1. Ship now? <a> yes | <a> wait for review | (b) drop it",
+    "expect": {
+      "zoned": true,
+      "status": "done",
+      "kind": "done",
+      "headline": "all tests pass. The build and the types are fine too.",
+      "steps": 2,
+      "bullets": ["Tests: 12 of 12 pass (`pnpm test`)", "Build: ok (`pnpm build:web`)", "Types: ok (`pnpm typecheck`)", "Lint: not run (not checked)", "Docs: README updated (#41)", "Deploy: not started"],
+      "todos": [],
+      "pending": [],
+      "asksAdmin": true,
+      "questions": [
+        { "id": "Q1", "options": ["a", "b"], "recommended": "a" }
+      ],
+      "listLine": "done — all tests pass. The build and the types are fine too."
+    },
+    "valid": false
+  }
+]

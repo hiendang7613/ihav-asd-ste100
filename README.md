@@ -312,7 +312,7 @@ Words work in every terminal, screen reader and language. Section numbers do the
 
 <details><summary><strong>Can I check a reply offline?</strong></summary>
 
-Yes: `python3 scripts/check_reply.py reply.md`. It checks the conclusion, the section order, the `<a>` markers and the length in any script. It cannot judge whether a reply is true.
+Yes: `python3 scripts/check_reply.py reply.md`. It checks the conclusion, the section order, the `<a>` markers and the length in any script. `--profile room` checks a post of Agent Room (the same three zones, but no clock, a `- guess => ...` first line, and only the sections Todos, Pending and Quests). It cannot judge whether a reply is true.
 </details>
 
 ## Evidence, honestly

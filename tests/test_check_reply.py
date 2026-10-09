@@ -446,6 +446,105 @@ class EvidenceAndWaitingTests(unittest.TestCase):
                 self.assertTrue(any("(inferred) or (not checked)" in w for w in warned), warned)
 
 
+ROOM = ("**Agents-Zone** - guess => the user wants a file count, to size the next job - run the count command => 4 files "
+        "**Result-Zone** Có 4 file .js trong src/. - Lệnh: `find src -name '*.js' | wc -l` thoát mã 0 "
+        "**Admin-Zone** **Conclusion:** waiting on tm — to đã đếm xong, tm chưa trả lời. "
+        "3. **Todos:** - Hỏi lại tm 4. **Pending:** - Waiting on tm: lệnh `sleep 70; date` "
+        "5. **Quests:** Q1. Chờ thêm hay bỏ tm? <a> chờ thêm | (b) bỏ tm")
+
+
+class RoomProfileTests(unittest.TestCase):
+    """check(text, "room") and --profile room: a post of Agent Room, the subset of the shape that the room keeps."""
+
+    def room(self, text):
+        return check(text, "room")
+
+    def violations(self, text):
+        return self.room(text)["violations"]
+
+    def assert_fails(self, text, expected):
+        self.assertNotEqual(text, ROOM)
+        found = self.violations(text)
+        self.assertTrue(any(expected in v for v in found), found)
+
+    def test_a_one_line_post_and_the_same_post_over_many_lines_pass(self):
+        report = self.room(ROOM)
+        self.assertTrue(report["ok"], report)
+        self.assertEqual((report["warnings"], report["stats"]["agents_lines"], report["stats"]["sections"]), ([], 2, [3, 4, 5]))
+        lines = ROOM.replace(" **", "\n\n**").replace(" - ", "\n- ").replace(" 3. ", "\n3. ").replace(" 4. ", "\n4. ").replace(" 5. ", "\n5. ")
+        self.assertIn("\n- run the count", lines)
+        self.assertTrue(self.room(lines)["ok"], self.room(lines))
+        self.assertTrue(self.room("@admin " + ROOM)["ok"])
+        self.assertEqual(self.room("@admin " + ROOM)["warnings"], [])
+
+    def test_a_post_without_zone_labels_passes_and_a_long_one_only_warns(self):
+        for plain in ("Có 4 file .js trong src/.", "done — xong. - Số tin: #99 Needs you: 1. Chọn? a) 300 b) 100", "**Notes-Zone** text"):
+            self.assertTrue(self.room(plain)["ok"], plain)
+        long = self.room("word " * 41)
+        self.assertTrue(long["ok"] and any("No zone labels" in w for w in long["warnings"]), long)
+        self.assertTrue(any("not a zone label" in w for w in self.room("**Notes-Zone** text")["warnings"]))
+
+    def test_the_three_zones_come_once_each_in_order(self):
+        self.assert_fails(ROOM[:ROOM.index(" **Admin-Zone**")], "three zone labels once each")
+        self.assert_fails(ROOM.replace("**Agents-Zone**", "**Result-Zone**", 1), "three zone labels once each")
+        self.assert_fails(ROOM + " **Admin-Zone**", "three zone labels once each")
+
+    def test_the_agents_zone_opens_with_a_short_guess_and_has_no_clock(self):
+        self.assert_fails(ROOM.replace("- guess => the user wants a file count, to size the next job ", ""), "first Agents-Zone line is '- guess =>")
+        self.assert_fails(ROOM.replace("- guess =>", "- why =>"), "first Agents-Zone line is '- guess =>")
+        self.assert_fails(ROOM.replace("a file count, to size the next job", "a file count of the whole repository, to size the next job and plan it"), "guess line has 18 words")
+        self.assertTrue(self.room(ROOM.replace("a file count, to size the next job", "a file count of the repository, to size it"))["ok"])
+        for clock in ("`4:43 PM` run the count command", "4:43 PM run the count command", "`16:05` run the count command"):
+            self.assert_fails(ROOM.replace("run the count command", clock), "no clock")
+        self.assertTrue(self.room(ROOM.replace("run the count command", "run `npm test` at `src/a.ts:4:43`"))["ok"])
+        self.assert_fails(ROOM.replace("run the count command => 4 files", "ran the count command"), "'- why => what'")
+        steps = "".join(" - step %d => result" % n for n in range(3))  # with the two lines above: 5 lines, the most allowed
+        self.assertTrue(self.room(ROOM.replace(" **Result-Zone**", steps + " **Result-Zone**"))["ok"])
+        self.assert_fails(ROOM.replace(" **Result-Zone**", steps + " - step 3 => result **Result-Zone**"), "Agents-Zone has 6 lines")
+        self.assertTrue(any("Agents-Zone is English" in w for w in self.room(ROOM.replace("4 files", "4 tệp"))["warnings"]))
+
+    def test_the_result_zone_has_an_answer_or_lines_and_at_most_five(self):
+        self.assert_fails(ROOM.replace("Có 4 file .js trong src/. - Lệnh: `find src -name '*.js' | wc -l` thoát mã 0", ""), "Result-Zone is empty")
+        lines = " ".join("- k%d: fact %d" % (n, n) for n in range(5))
+        self.assertTrue(self.room(ROOM.replace("- Lệnh: `find src -name '*.js' | wc -l` thoát mã 0", lines))["ok"])
+        self.assert_fails(ROOM.replace("- Lệnh: `find src -name '*.js' | wc -l` thoát mã 0", lines + " - k5: fact 5"), "Result-Zone has 6 lines")
+
+    def test_the_conclusion_is_one_short_sentence_after_an_optional_status(self):
+        self.assert_fails(ROOM.replace("**Conclusion:** ", ""), "Admin-Zone opens with **Conclusion:**")
+        self.assert_fails(ROOM.replace("tm chưa trả lời.", "tm chưa trả lời. Còn một câu nữa."), "2 sentences")
+        self.assert_fails(ROOM.replace("to đã đếm xong, tm chưa trả lời.", " ".join(["từ"] * 36)), "36 words (limit 35)")
+        self.assertTrue(self.room(ROOM.replace("to đã đếm xong, tm chưa trả lời.", " ".join(["từ"] * 35) + "."))["ok"])
+        no_status = self.room(ROOM.replace("waiting on tm — ", ""))
+        self.assertTrue(no_status["ok"] and any("starts with a status" in w for w in no_status["warnings"]), no_status)
+        for status in ("done", "not done", "unsure", "waiting on admin"):
+            self.assertEqual(self.room(ROOM.replace("waiting on tm", status))["warnings"], [], status)
+
+    def test_only_todos_pending_and_quests_are_kept_and_each_only_with_items(self):
+        for kept in ("0. **Goals:** - an aim", "6. **Risks:** - a risk", "7. **Ideas:** - an idea", "1. **Done:** - work", "2. **Doing:** - work"):
+            self.assert_fails(ROOM.replace("3. **Todos:**", kept + " 3. **Todos:**"), "keeps only 3. **Todos:**")
+        self.assert_fails(ROOM.replace("3. **Todos:** - Hỏi lại tm", "3. **Todos:**"), "Leave out 3. **Todos:** when it has no items")
+        self.assert_fails(ROOM.replace("5. **Quests:** Q1. Chờ thêm hay bỏ tm? <a> chờ thêm | (b) bỏ tm", "5. **Quests:**"), "Leave out 5. **Quests:**")
+        self.assert_fails(ROOM.replace("4. **Pending:**", "5. **Pending:**"), "Write the section as '4. **Pending:**'")
+        self.assertTrue(self.room(ROOM[:ROOM.index(" 3. **Todos:**")])["ok"])  # a Conclusion alone is enough
+
+    def test_a_question_has_one_recommended_option_written_as_a_and_numbered_from_1(self):
+        quest = "Q1. Chờ thêm hay bỏ tm? <a> chờ thêm | (b) bỏ tm"
+        self.assertIn(quest, ROOM)
+        self.assert_fails(ROOM.replace(quest, "Q1. Chờ thêm hay bỏ tm? <a> chờ thêm | <a> bỏ tm"), "2 options marked <a>")
+        self.assert_fails(ROOM.replace(quest, "Q1. Chờ thêm hay bỏ tm? (a) chờ thêm | (b) bỏ tm"), "never (a)")
+        self.assert_fails(ROOM.replace(quest, "Q1. Chờ thêm hay bỏ tm? chờ thêm | (b) bỏ tm"), "0 options marked <a>")
+        self.assert_fails(ROOM.replace(quest, "Q2. Chờ thêm hay bỏ tm? <a> chờ thêm | (b) bỏ tm"), "Number the questions")
+        self.assertTrue(self.room(ROOM.replace(quest, "Q1. Chờ thêm hay bỏ tm? `<a>` chờ thêm | (b) bỏ tm Q2. Hỏi lại? <a> có | (b) không"))["ok"])
+        self.assertTrue(self.room(ROOM.replace(quest, "Q1. Anh muốn gì tiếp theo?"))["ok"])  # an open question has no options
+
+    def test_pending_items_should_open_with_waiting_on_and_weak_marks_warn_only(self):
+        pending = self.room(ROOM.replace("- Waiting on tm: lệnh", "- chờ tm: lệnh"))
+        self.assertTrue(pending["ok"] and any("Pending item" in w for w in pending["warnings"]), pending)
+        marked = self.room(ROOM.replace("4 files", "4 files (checked)"))
+        self.assertTrue(marked["ok"] and any("(inferred) or (not checked)" in w for w in marked["warnings"]), marked)
+        self.assert_fails(ROOM.replace("thoát mã 0", "thoát mã 0 \U0001F389"), "emoji")
+
+
 class StyleTests(unittest.TestCase):
     def test_emoji_and_square_brackets_fail_but_code_spans_may_hold_anything(self):
         self.assertFalse(check(FULL.replace("**Login fix:** merged.", "**Login fix:** merged ✅"))["ok"])

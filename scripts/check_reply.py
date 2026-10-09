@@ -4,6 +4,7 @@ Usage:
   python3 scripts/check_reply.py REPLY.md            # human-readable report
   python3 scripts/check_reply.py REPLY.md --json     # machine-readable report
   cat reply.md | python3 scripts/check_reply.py -    # read standard input
+  python3 scripts/check_reply.py POST.txt --profile room   # a post of Agent Room (see below)
 
 Exit code 0 when there is no violation, 1 otherwise. Warnings never fail the check.
 The check covers what can be checked mechanically: the three zone labels and step lines, the conclusion part,
@@ -14,6 +15,13 @@ An optional first section `X. **Compass:**` (up to 5 compass lines, each optiona
 [~95%], a last More item, X! deviation items) and the Compass-alone reply to "x" are checked too; a project without a
 Compass file never has them.
 It cannot judge meaning, accuracy or tone; a passing reply can still be wrong.
+
+Profile room checks a post of Agent Room, the subset of this shape that the room keeps; the text may be one line, as the
+room stores it. A post with no zone label is a one-fact post or an older report and passes (the room shows it whole).
+With labels it has the three zones once each, in order, and: no clock in the Agents-Zone, whose first line is
+"- guess => ..." of up to 12 words, at most 5 lines in a zone; a Result-Zone that is not empty; an Admin-Zone that opens
+with "**Conclusion:**" (a status word first is fine) of one sentence and up to 35 words, then only the sections
+"3. **Todos:**", "4. **Pending:**" and "5. **Quests:**", each only when it has items; and each question "Q1." with one <a>.
 
 Any language: body text can use any language. Structural numbers, labels and colons stay in ASCII.
 Length is counted in words for scripts with spaces and in characters (converted to word equivalents)
@@ -493,7 +501,138 @@ def compass_alone_problems(text):
     return problems
 
 
-def check(text):
+# --- Profile room: a post of Agent Room --------------------------------------------------------------------------------
+ROOM_LABEL = re.compile(r"\*\*\s*(Agents|Result|Admin)\s*-\s*Zone\s*:?\s*\*\*", re.I)
+ROOM_ANY_ZONE = re.compile(r"\*\*[^*]{1,30}-Zone\*\*", re.I)
+ROOM_SECTION = re.compile(r"(?:\b([0-9])\.\s*)?\*\*\s*(Goals|Done|Doing|Todos|Pending|Quests|Risks|Ideas)\s*:?\s*\*\*:?", re.I)
+ROOM_KEPT = {"Todos": 3, "Pending": 4, "Quests": 5}
+ROOM_CONCLUSION = re.compile(r"\*\*\s*Conclusion\s*:?\s*\*\*:?\s*", re.I)
+ROOM_STATUS = re.compile(r"^(done|not done|unsure|waiting on [^—–:]+?)\s*(?:[—–:]|\s-\s)\s*", re.I)
+ROOM_BULLET = re.compile(r"(?:^|\s)-\s+(?=\S)")
+ROOM_QUESTION = re.compile(r"(?:^|\s)(?=Q[0-9]+\.\s)")
+ROOM_CLOCK = re.compile(r"^(?:[0-9]{1,2}:[0-9]{2}\b|\x00([0-9]+)\x00\s)")
+MAX_ROOM_LINES = 5
+PROFILES = ("full", "room")
+
+
+def room_bullets(zone):
+    """The text before the first "- " item of a zone, and the items."""
+    parts = ROOM_BULLET.split(zone)
+    return parts[0].strip(), [part.strip() for part in parts[1:] if part.strip()]
+
+
+def room_check(text):
+    """Check one post of Agent Room. The room stores a post as one line, so work on the text with whitespace folded and
+    each inline code span hidden behind one placeholder token (it counts as one word)."""
+    hidden = []
+
+    def hide(match):
+        hidden.append(match.group(0))
+        return "\x00%d\x00" % (len(hidden) - 1)
+
+    def show(part):
+        return re.sub("\x00([0-9]+)\x00", lambda m: hidden[int(m.group(1))], part)[:40]
+
+    flat = re.sub(r"\s+", " ", re.sub(r"`[^`]*`", hide, mask_code(text.replace("`<a>`", "<a>")))).strip()
+    violations, warnings = [], []
+    stats = {"words": units(flat), "zones": [], "agents_lines": 0, "result_lines": 0, "conclusion_words": 0, "sections": []}
+    labels = list(ROOM_LABEL.finditer(flat))
+    unknown = sorted({m.group(0) for m in ROOM_ANY_ZONE.finditer(flat) if not ROOM_LABEL.fullmatch(m.group(0))})
+    warnings.extend("%s is not a zone label; the room shows it as plain text." % name for name in unknown)
+    if EMOJI.search(flat):
+        violations.append("The post contains emoji; write status in words.")
+    warnings.extend(evidence_warnings(text))
+    if not labels:  # a one-fact post or an older report: the room shows it whole as the Result
+        if stats["words"] > SMALL_ANSWER_WORDS:
+            warnings.append("No zone labels in a post of more than %d words; a post that took steps has the three zones." % SMALL_ANSWER_WORDS)
+        return {"ok": not violations, "violations": violations, "warnings": warnings, "stats": stats}
+    stats["zones"] = [m.group(1).title() for m in labels]
+    if stats["zones"] != ["Agents", "Result", "Admin"]:
+        violations.append("Write the three zone labels once each, in order: **Agents-Zone**, **Result-Zone**, **Admin-Zone** "
+                          "(a one-fact post has none).")
+        return {"ok": False, "violations": violations, "warnings": warnings, "stats": stats}
+    if not re.fullmatch(r"(?:@[\w-]+\s*)*", flat[:labels[0].start()]):
+        warnings.append("Text before **Agents-Zone** joins the Result in the room.")
+    agents, result, admin = (flat[labels[i].end():labels[i + 1].start() if i < 2 else len(flat)].strip() for i in range(3))
+
+    lead, steps = room_bullets(agents)
+    stats["agents_lines"] = len(steps)
+    if lead or not steps or not GUESS_LINE.match("- " + steps[0]):
+        violations.append("The first Agents-Zone line is '- guess => the user's why and final aim', with no text before it.")
+    elif units(steps[0].split("=>", 1)[1]) > MAX_GUESS_WORDS:
+        violations.append("The guess line has %g words (limit %d)." % (units(steps[0].split("=>", 1)[1]), MAX_GUESS_WORDS))
+    if len(steps) > MAX_ROOM_LINES:
+        violations.append("Agents-Zone has %d lines (at most %d)." % (len(steps), MAX_ROOM_LINES))
+    for step in steps:
+        clock = ROOM_CLOCK.match(step)
+        if clock and (not clock.group(1) or re.fullmatch(r"`[0-9]{1,2}:[0-9]{2}[^`]*`", hidden[int(clock.group(1))])):
+            violations.append("The room has no clock: write '- why => what' without a time: %s" % show(step))
+        elif not re.search(r"\S => \S", step):
+            violations.append("Agents-Zone lines are '- why => what': %s" % show(step))
+        elif units(step) > MAX_STEP_WORDS and not GUESS_LINE.match("- " + step):
+            warnings.append("Agents-Zone line has %g words (target about 12): %s..." % (units(step), show(step)))
+    if re.search(r"[^\x00-\x7f\W]", agents):
+        warnings.append("The Agents-Zone is English.")
+
+    answer, bullets = room_bullets(result)
+    stats["result_lines"] = len(bullets)
+    if not answer and not bullets:
+        violations.append("The Result-Zone is empty; open it with the answer.")
+    if len(bullets) > MAX_ROOM_LINES:
+        violations.append("Result-Zone has %d lines (at most %d)." % (len(bullets), MAX_ROOM_LINES))
+
+    opening = ROOM_CONCLUSION.search(admin)
+    if not opening or admin[:opening.start()].strip():
+        violations.append("The Admin-Zone opens with **Conclusion:** <status> - <one sentence>.")
+        return {"ok": False, "violations": violations, "warnings": warnings, "stats": stats}
+    sections = list(ROOM_SECTION.finditer(admin, opening.end()))
+    conclusion = admin[opening.end():sections[0].start() if sections else len(admin)].strip()
+    status = ROOM_STATUS.match(conclusion)
+    sentence = conclusion[status.end():] if status else conclusion
+    stats["conclusion_words"] = units(sentence)
+    if not status:
+        warnings.append("The Conclusion starts with a status: done, not done, waiting on <member>, or unsure.")
+    if not sentence.strip():
+        violations.append("The Conclusion has no sentence.")
+    if units(sentence) > MAX_CONCLUSION_WORDS:
+        violations.append("The Conclusion has %g words (limit %d)." % (units(sentence), MAX_CONCLUSION_WORDS))
+    if sentence_count(sentence) > 1:
+        violations.append("The Conclusion has %d sentences; write one." % sentence_count(sentence))
+
+    for index, section in enumerate(sections):
+        number, label = section.group(1), section.group(2).title()
+        body = admin[section.end():sections[index + 1].start() if index + 1 < len(sections) else len(admin)].strip()
+        stats["sections"].append(ROOM_KEPT.get(label))
+        if label not in ROOM_KEPT:
+            violations.append("The room keeps only 3. **Todos:**, 4. **Pending:** and 5. **Quests:**; found %s." % label)
+            continue
+        if number != str(ROOM_KEPT[label]):
+            violations.append("Write the section as '%d. **%s:**'." % (ROOM_KEPT[label], label))
+        if not body:
+            violations.append("Leave out %d. **%s:** when it has no items." % (ROOM_KEPT[label], label))
+        elif label == "Quests":
+            questions = [q.strip() for q in ROOM_QUESTION.split(body) if q.strip()]
+            if [int(re.match(r"Q([0-9]+)", q).group(1)) for q in questions if re.match(r"Q[0-9]+\.", q)] != list(range(1, len(questions) + 1)):
+                violations.append("Number the questions Q1., Q2., ... in order: %s" % show(body))
+            for question in questions:
+                marked, options = question.count("<a>"), len(re.findall(r"<a>|\([b-z]\)", question))
+                if "(a)" in question:
+                    violations.append("Write the recommended option as <a>, never (a): %s" % show(question))
+                if marked > 1 or (options and marked != 1):
+                    violations.append("Question '%s' has %d options marked <a> (need exactly 1)." % (show(question), marked))
+        else:
+            lead, items = room_bullets(body)
+            if lead or not items:
+                violations.append("%d. **%s:** holds '- ' items." % (ROOM_KEPT[label], label))
+            if label == "Pending":
+                warnings.extend("Pending item '%s' should start with 'Waiting on <who or what>:'." % show(item)
+                                for item in items if not re.match(r"(?:\*\*)?Waiting on\b", item))
+    return {"ok": not violations, "violations": violations, "warnings": warnings, "stats": stats}
+
+
+def check(text, profile="full"):
+    if profile == "room":
+        return room_check(text)
     first = next((line.strip() for line in mask_code(text).splitlines() if line.strip()), "")
     if first == "**Compass**":
         problems = compass_alone_problems(mask_code(text))
@@ -601,11 +740,16 @@ def check(text):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[1] in {"-h", "--help"}:
+    args, profile = argv[1:], "full"
+    if "--profile" in args and args.index("--profile") + 1 < len(args):
+        profile = args[args.index("--profile") + 1]
+        del args[args.index("--profile"):args.index("--profile") + 2]
+    paths = [arg for arg in args if arg == "-" or not arg.startswith("-")]
+    if not paths or any(arg in {"-h", "--help"} for arg in args) or profile not in PROFILES:
         print(__doc__.strip())
         return 2
-    text = sys.stdin.read() if argv[1] == "-" else open(argv[1], encoding="utf-8").read()
-    report = check(text)
+    text = sys.stdin.read() if paths[0] == "-" else open(paths[0], encoding="utf-8").read()
+    report = check(text, profile)
     if "--json" in argv:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
