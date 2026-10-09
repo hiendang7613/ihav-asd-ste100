@@ -165,7 +165,7 @@ Examples: [a reply with X](examples/compass-en.md) and [the reply to `x`](exampl
 | Bold | Labels, plus at most one phrase per bullet | Emphasis that is everywhere is nowhere |
 | Lists | Two levels in the body; at most five items you must act on | A short list is read; a long one is skipped |
 | Tables | Only to compare three or more items | Terminals wrap wide tables |
-| Never | Emoji, square brackets outside L progress, headings, boxes, or a reply wrapped in a code block | They cost lines and show raw markers |
+| Never | Emoji, square brackets outside L progress and Compass percents, headings, boxes, or a reply wrapped in a code block | They cost lines and show raw markers |
 
 Why `<a>` sits in a code span: a bare `<a>` or `<b>` is an HTML tag, and Markdown renderers delete it. We checked this on GitHub.
 
