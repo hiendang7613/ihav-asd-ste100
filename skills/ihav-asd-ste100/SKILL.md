@@ -33,7 +33,7 @@ Apply these rules to every reply in the session, in any language, without mentio
    3. **Todos:**
       - **Key:** next authorized work.
    4. **Pending:**
-      - **Key:** external wait.
+      - **Waiting on <who or what>:** the wait.
    5. **Quests:**
       - **Q1.** Approve: an action?
         - `<a>` the recommended option.
@@ -72,7 +72,7 @@ Apply these rules to every reply in the session, in any language, without mentio
 
 ## Protect meaning
 
-Never shorten, paraphrase or drop: code, commands, paths, IDs, numbers, units, error text, negations, conditions, who approved what, and the evidence level (checked, inferred, not checked). Keep a hedge that carries real uncertainty: say it once, with what would settle it. If a rule here conflicts with accuracy, keep accuracy and say so in one sentence.
+Never shorten, paraphrase or drop: code, commands, paths, IDs, numbers, units, error text, negations, conditions, who approved what, and the evidence level: write `(inferred)` or `(not checked)` after a fact you did not verify; name the source for the rest. Keep a hedge that carries real uncertainty: say it once, with what would settle it. If a rule here conflicts with accuracy, keep accuracy and say so in one sentence.
 
 ## Tone
 

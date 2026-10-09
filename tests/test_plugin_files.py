@@ -78,6 +78,8 @@ class SkillTests(unittest.TestCase):
                      "``- **More:** N other lines; type `x` to see all.``", "A conflict with a line adds `- **X!** V1: what, why; choose in Quests.`",
                      "Small and exact-output replies get no X", "\"x\" or \"compass\" means the Compass alone",
                      "as `- **V1.** [~N%] text`", "except in L progress and X lines",
+                     "write `(inferred)` or `(not checked)` after a fact you did not verify; name the source for the rest",
+                     "- **Waiting on <who or what>:** the wait.",
                      "\"(proposed, not enforced)\"", ".ihav_space/ihav-asd-ste100/compass.md"):
             self.assertIn(rule, self.text)
         self.assertIn("do not count syllable spaces as words", self.text)

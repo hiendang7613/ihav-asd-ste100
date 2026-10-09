@@ -29,7 +29,7 @@ FULL = """**Agents-Zone**
 3. **Todos:**
    - **Payment test:** check `payment.spec.ts:88`.
 4. **Pending:**
-   - **Review:** waiting for the other agent.
+   - **Waiting on the other agent:** review of the login fix.
 5. **Quests:**
    - **Q1.** Approve: deploy to production?
      - `<a>` After CI passes.
@@ -197,7 +197,7 @@ class ShapeTests(unittest.TestCase):
         self.assertTrue(check(open_question)["ok"], check(open_question))
 
     def test_an_item_listed_in_two_sections_is_warned(self):
-        twice = FULL.replace("4. **Pending:**\n   - **Review:** waiting for the other agent.",
+        twice = FULL.replace("4. **Pending:**\n   - **Waiting on the other agent:** review of the login fix.",
                              "4. **Pending:**\n   - **Payment test:** waiting for the other agent.")
         self.assertNotEqual(twice, FULL)
         report = check(twice)
@@ -414,6 +414,37 @@ class CompassTests(unittest.TestCase):
                 self.assertTrue(report["ok"], report)
 
 
+class EvidenceAndWaitingTests(unittest.TestCase):
+    """Reply-sync: evidence marks after unverified facts, and Pending items that open with Waiting on."""
+
+    def warnings(self, text):
+        report = check(text)
+        self.assertTrue(report["ok"], report)  # these rules only warn
+        return report["warnings"]
+
+    def test_a_pending_item_opens_with_waiting_on_as_its_key_or_right_after_it(self):
+        pending = "   - **Waiting on the other agent:** review of the login fix.\n"
+        self.assertIn(pending, FULL)
+        self.assertEqual(self.warnings(FULL), [])
+        after_key = FULL.replace(pending, "   - **Review:** Waiting on the other agent: the login fix.\n")
+        self.assertEqual(self.warnings(after_key), [])
+        for old_style in ("   - **Review:** waiting for the other agent.\n", "   - **Review:** the other agent has the fix.\n",
+                          "   - **Waiting:** on the other agent.\n"):
+            with self.subTest(item=old_style):
+                warned = self.warnings(FULL.replace(pending, old_style))
+                self.assertTrue(any("Pending item" in w and "Waiting on <who or what>:" in w for w in warned), warned)
+        self.assertEqual(self.warnings(FULL.replace(pending, "")), [])  # an empty Pending shows only its label
+
+    def test_an_evidence_mark_is_inferred_or_not_checked_and_never_checked(self):
+        for fine in ("(inferred)", "(not checked)", "`(checked)`", "(see #12)"):
+            with self.subTest(fine=fine):
+                self.assertEqual(self.warnings(FULL.replace("213 pass.", "213 pass %s." % fine)), [])
+        for odd in ("(checked)", "(Verified)", "(unverified)", "(unchecked)", "(not verified)"):
+            with self.subTest(odd=odd):
+                warned = self.warnings(FULL.replace("213 pass.", "213 pass %s." % odd))
+                self.assertTrue(any("(inferred) or (not checked)" in w for w in warned), warned)
+
+
 class StyleTests(unittest.TestCase):
     def test_emoji_and_square_brackets_fail_but_code_spans_may_hold_anything(self):
         self.assertFalse(check(FULL.replace("**Login fix:** merged.", "**Login fix:** merged ✅"))["ok"])
@@ -474,7 +505,7 @@ class StyleTests(unittest.TestCase):
         self.assertTrue(check(empty)["ok"], check(empty))
         for elsewhere in (FULL.replace("213 pass.", "213 pass [~80%]."),
                           FULL.replace("**Result-Zone**\n", "**Result-Zone**\n   - **L2.** [~80%] [########--] | Extra aim.\n"),
-                          FULL.replace("   - **Review:** waiting", "   - **L2.** [~80%] [########--] | Extra aim.\n   - **Review:** waiting"),
+                          FULL.replace("   - **Waiting on", "   - **L2.** [~80%] [########--] | Extra aim.\n   - **Waiting on"),
                           FULL.replace("   - **G1.** Fix the login test.", "   - **G1.** [~80%] [########--] | Fix the login test.")):
             with self.subTest(brackets=elsewhere[:0]):
                 self.assertFalse(check(elsewhere)["ok"])

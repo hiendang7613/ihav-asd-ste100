@@ -25,7 +25,7 @@ import re
 import sys
 
 SECTIONS = {0: "Goals", 1: "Done", 2: "Doing", 3: "Todos", 4: "Pending", 5: "Quests", 6: "Risks", 7: "Ideas"}
-GOALS, QUESTIONS, RISKS, IDEAS = 0, 5, 6, 7
+GOALS, PENDING, QUESTIONS, RISKS, IDEAS = 0, 4, 5, 6, 7
 COMPASS = -1  # the optional section "X. **Compass:**", first in the list, above Goals
 COMPASS_GROUPS = {"V": "Vision", "A": "Architecture", "W": "Work habits", "C": "Code", "S": "Style"}
 MAX_COMPASS_LINES = 5
@@ -66,6 +66,7 @@ BOLD_KEY = re.compile(r"^\*\*[^*:\n]{1,40}:\*\*(\s|$)")
 OPTION_ITEM = re.compile(r"^(?:`<a>`|\([a-z]\))(?:\s|$)")
 ID_CANDIDATE = re.compile(r"\*\*[QRI]\d+\.\*\*")
 RECOMMENDED = "`<a>`"
+EVIDENCE_ODD = re.compile(r"\((?:checked|verified|unverified|unchecked|not verified)\)", re.I)
 ZONES = ("Agents-Zone", "Result-Zone", "Admin-Zone")
 ZONE_LINE = re.compile(r"^\*\*(%s)\*\*\s*$" % "|".join(ZONES))
 STEP_LINE = re.compile(r"^- (?:`(?:1[0-2]|[1-9]):[0-5][0-9] (?:AM|PM)` )?\S.* => \S")
@@ -302,6 +303,21 @@ def step_warnings(text):
     return warnings
 
 
+def pending_warnings(sections):
+    """Pending lists outside waits. Each item opens with `Waiting on <who or what>:`, as its bold key or right after it."""
+    return ["Pending item '%s' should start with 'Waiting on <who or what>:'." % item[:30]
+            for number, _, _, subs in sections if number == PENDING
+            for item in (SUB_ITEM.match(line).group(1) for line in subs if len(line) - len(line.lstrip()) <= 3)
+            if not re.match(r"^(?:\*\*|\*\*[^*:\n]{1,40}:\*\*\s+)Waiting on\b", item)]
+
+
+def evidence_warnings(text):
+    """The evidence marks are (inferred) and (not checked), written after a fact the agent did not verify. A checked fact
+    names its source instead, so a (checked) or (unverified) mark is a sign of the old habit."""
+    return ["Write (inferred) or (not checked) after a fact you did not verify and name the source for the rest; never (checked)."
+            ] if EVIDENCE_ODD.search(re.sub(r"`[^`]*`", "", strip_code(text))) else []
+
+
 def duplicate_items(sections):
     """An item belongs in one section only; the same bold key in two sections is likely one item listed twice."""
     seen, warnings = {}, []
@@ -517,6 +533,7 @@ def check(text):
             if number == GOALS:
                 violations.extend(goal_problems(subs))
         warnings.extend(duplicate_items(sections))
+        warnings.extend(pending_warnings(sections))
         goals = next((subs for number, _, _, subs in sections if number == GOALS), None)
         if goals is not None and not any(re.match(r"^\s{3}[-*]\s+\*\*L[0-9]+\.\*\*", line) for line in goals):
             warnings.append("Goals has no L line; ask the user for a long-term aim in Quests.")
@@ -543,6 +560,7 @@ def check(text):
            for _, _, payload in fenced_blocks(text)):
         violations.append("The conclusion part is inside a code block; the reader would see raw markers.")
 
+    warnings.extend(evidence_warnings(text))
     body_sentences = sentences(body)
     for sentence in (s for s in body_sentences if units(s) > MAX_SENTENCE_WORDS):
         warnings.append("Long sentence (%g words): %s..." % (units(sentence), sentence[:60]))

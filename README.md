@@ -89,7 +89,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 3. **Todos:**
    - **Payment test:** check `payment.spec.ts:88`.
 4. **Pending:**
-   - **Review:** waiting for the other agent.
+   - **Waiting on the other agent:** review.
 5. **Quests:**
    - **Q1.** Approve: deploy the login fix to production?
      - `<a>` After CI passes.
