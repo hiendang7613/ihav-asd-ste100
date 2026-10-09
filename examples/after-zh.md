@@ -1,4 +1,5 @@
 **Agents-Zone**
+- guess => 用户希望所有客户端都能登录后再发布
 - `4:12 PM` 新客户端的登录测试失败 => 阅读 `src/auth.ts`
 - `4:15 PM` `verifyToken` 读取了自定义请求头 => 改为读取 `Authorization`
 - `4:18 PM` 验证修复 => 运行 `npm test`

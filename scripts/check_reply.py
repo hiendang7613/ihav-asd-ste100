@@ -44,6 +44,8 @@ L_PROGRESS_LINE = re.compile(r"(?m)^(   [-*] \*\*L[0-9]+\.\*\* )\[~[0-9]{1,3}%%\
 COMPASS_PERCENT = re.compile(r"^\[~([0-9]{1,3})%\]\s+\S")
 COMPASS_PERCENT_LINE = re.compile(r"(?m)^(   [-*] \*\*[A-Za-z][0-9]+\.\*\* )\[~[0-9]{1,3}%\]")
 MAX_STEP_WORDS = 16
+MAX_GUESS_WORDS = 12
+GUESS_LINE = re.compile(r"^- guess => \S")
 MAX_CONCLUSION_WORDS = 35  # 25 until 0.19.3; technical replies in every room ran 26 to 56
 MAX_SENTENCE_WORDS = 25
 BODY_WORD_BUDGET = 250
@@ -289,16 +291,23 @@ def goals_progress_removed(text):
 
 
 def step_warnings(text):
-    """Agents-Zone lines stay short: about 12 words, warned above MAX_STEP_WORDS. A code span counts as one word."""
+    """Agents-Zone lines stay short: about 12 words, warned above MAX_STEP_WORDS. A code span counts as one word.
+    The first line is the guess, `- guess => the user's why and final aim`, up to 12 words and without a time;
+    a missing or long guess only warns here (the room profile fails it)."""
     lines = mask_code(text).splitlines()
     labels = [index for index, line in enumerate(lines) if ZONE_LINE.match(line)]
     names = [ZONE_LINE.match(lines[index]).group(1) for index in labels]
     if names[:2] != ["Agents-Zone", "Result-Zone"]:
         return []
     warnings = []
-    for line in lines[labels[0] + 1:labels[1]]:
+    steps = [line for line in lines[labels[0] + 1:labels[1]] if line.strip()]
+    if not steps or not GUESS_LINE.match(steps[0]):
+        warnings.append("The first Agents-Zone line is '- guess => the user's why and final aim' (up to %d words)." % MAX_GUESS_WORDS)
+    for line in steps:
         words = units(re.sub(r"`[^`]*`", "x", line[2:]))
-        if line.strip() and words > MAX_STEP_WORDS:
+        if GUESS_LINE.match(line) and units(line.split("=>", 1)[1]) > MAX_GUESS_WORDS:
+            warnings.append("Agents-Zone guess line has %g words (limit %d)." % (units(line.split("=>", 1)[1]), MAX_GUESS_WORDS))
+        elif words > MAX_STEP_WORDS:
             warnings.append("Agents-Zone line has %g words (target about 12): %s..." % (words, line[:40]))
     return warnings
 

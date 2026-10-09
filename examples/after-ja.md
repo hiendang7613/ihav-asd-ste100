@@ -1,4 +1,5 @@
 **Agents-Zone**
+- guess => 全員がログインできる状態で出荷したい
 - `4:12 PM` 新クライアントでログイン失敗 => `src/auth.ts` を読む
 - `4:15 PM` `verifyToken` が独自ヘッダー => `Authorization` に修正
 - `4:18 PM` 修正を確認 => `npm test` を実行

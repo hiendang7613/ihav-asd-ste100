@@ -9,6 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HOOKS = json.loads((ROOT / "hooks/hooks.json").read_text())
 LAUNCH = HOOKS["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+# 570 bytes for the whole prompt reminder (520 until the guess line, 480 until 0.19.3, 400 until 0.11.0): the L layout and
+# the first Agents-Zone line "- guess => ..." keep agents from drifting back to old habits.
+REMINDER_LIMIT = 570
 
 
 class HookTests(unittest.TestCase):
@@ -81,11 +84,11 @@ class HookTests(unittest.TestCase):
         self.opt_in()
         out = self.run_hook({"hook_event_name": "UserPromptSubmit", "session_id": "a", "prompt": "fix the bug"})
         self.assertEqual(out.count("\n"), 1)
-        # 520 bytes (480 until 0.19.3, 400 until 0.11.0): the L layout keeps agents from drifting back to old habits.
-        self.assertLess(len(out.encode()), 520)
+        self.assertLess(len(out.encode()), REMINDER_LIMIT)
         self.assertIn("0. **Goals:** (`**L1.** [~N%] [bar] | aim`, then plain G and B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
                       "5. **Quests:**, 6. **Risks:**, 7. **Ideas:**", out)
-        for zone in ("**Agents-Zone** (short step lines: `time` why => what)", "No emoji or square brackets except L progress.", "**Result-Zone**", "**Admin-Zone**"):
+        for zone in ("**Agents-Zone** (first `- guess => the user's why and final aim`, then step lines: `time` why => what)",
+                     "No emoji or square brackets except L progress.", "**Result-Zone**", "**Admin-Zone**"):
             self.assertIn(zone, out)
         self.assertRegex(out, r" Now (1[0-2]|[1-9]):[0-5][0-9] (AM|PM)\.\n$")
         self.assertIn("items are sub-items with a bold key", out)
@@ -200,7 +203,7 @@ class HookTests(unittest.TestCase):
                 out = self.prompt(cwd, session="e")
                 self.assertEqual(out.split(" Now ")[0], reference)
                 self.assertNotIn("Compass", out)
-                self.assertLess(len(out.encode()), 520)
+                self.assertLess(len(out.encode()), REMINDER_LIMIT)
         only_proposed = self.project("- W5? Only a proposed line.\n## no active line\n", name="proposed")
         self.assertEqual(self.prompt(only_proposed, session="f").split(" Now ")[0], reference)
 
@@ -308,14 +311,14 @@ class HookTests(unittest.TestCase):
         self.assertIn("40 more active lines cut (over 60 lines or 4 KB).", out)
         wide = "".join("- A%d %s\n" % (n, "word " * 70) for n in range(1, 40))
         out = self.prompt(self.project(wide, name="wide"), session="w")
-        self.assertLess(len(out.encode()), 520 + 4096 + 700)
+        self.assertLess(len(out.encode()), REMINDER_LIMIT + 4096 + 700)
         self.assertRegex(out, r"\d+ more active lines cut")
         huge = "- V1 First line stays.\n" + "".join("- V%d Filler line number %d.\n" % (n, n) for n in range(2, 300000))
         self.assertGreater(len(huge), 5_000_000)
         out = self.prompt(self.project(huge, name="huge"), session="z")
         self.assertIn("V1 First line stays", out)
         self.assertRegex(out, r"\d+\+ more active lines cut")
-        self.assertLess(len(out.encode()), 520 + 4096 + 700)
+        self.assertLess(len(out.encode()), REMINDER_LIMIT + 4096 + 700)
 
     def test_codex_gets_the_compass_from_the_same_core(self):
         environment = self.env.copy()

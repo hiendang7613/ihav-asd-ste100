@@ -86,6 +86,9 @@ class SkillTests(unittest.TestCase):
         for zone in ("`**Agents-Zone**`", "`**Result-Zone**`", "`**Admin-Zone**`"):
             self.assertIn(zone, self.text)
         self.assertIn("`` - `4:43 PM` why => what ``", self.text)
+        self.assertIn("first `` - guess => the user's why and final aim `` (up to 12 words); then one short line per step", self.text)
+        self.assertIn("With no steps, show the guess line only", self.text)
+        self.assertIn("Ask one short question only when a wrong guess costs much", self.text)
         self.assertIn("Take the time only from a clock note or command output", self.text)
         self.assertLess(self.text.index("`**Agents-Zone**`"), self.text.index("`**Result-Zone**`"))
         self.assertLess(self.text.index("`**Admin-Zone**`"), self.text.index("`**Conclusion:**`"))

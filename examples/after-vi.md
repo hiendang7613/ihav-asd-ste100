@@ -1,4 +1,5 @@
 **Agents-Zone**
+- guess => người dùng muốn mọi client đăng nhập được trước khi phát hành
 - `4:12 PM` test đăng nhập lỗi với client mới => đọc `src/auth.ts`
 - `4:15 PM` `verifyToken` đọc một header riêng => sửa để đọc `Authorization`
 - `4:18 PM` kiểm tra bản sửa => chạy `npm test`

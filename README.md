@@ -66,6 +66,7 @@ After trusting the hooks, start a new session. Say `stop ste mode` to pause the 
 Every reply that has more than one fact has three zones, each under a bold label:
 
 **Agents-Zone**
+- guess => the user wants every client logging in before shipping
 - `4:12 PM` the login test fails for the new client => read `src/auth.ts`
 - `4:15 PM` `verifyToken` reads a custom header => changed it to read `Authorization`
 - `4:18 PM` check the fix => ran `npm test`
@@ -103,7 +104,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 
 | Part | What it holds | Who acts |
 |---|---|---|
-| **Agents-Zone** | Every step the agent took this turn, in order: the time, why, `=>`, what it did. The time comes from a real clock (a hook in Claude Code), never a guess | The agent, already |
+| **Agents-Zone** | First line `- guess => ...`: the agent's guess of your why and final aim, in up to 12 words, so you can correct it early. Then every step the agent took this turn, in order: the time, why, `=>`, what it did. The time comes from a real clock (a hook in Claude Code), never a guess | The agent, already |
 | **Result-Zone** | The answer or blocker first, then the facts and evidence as key-first bullets | The agent, already |
 | **Admin-Zone** | The Conclusion line and the eight sections below | You decide from here |
 | **Conclusion** | The result in one sentence. Bad news first: failure, skip, blocker, unverified work. | Nobody: it is the verdict |

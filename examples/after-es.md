@@ -1,4 +1,5 @@
 **Agents-Zone**
+- guess => el usuario quiere que todo cliente inicie sesión antes de publicar
 - `4:12 PM` la prueba de login falla con el cliente nuevo => leer `src/auth.ts`
 - `4:15 PM` `verifyToken` lee una cabecera propia => cambiarlo para leer `Authorization`
 - `4:18 PM` comprobar la corrección => ejecutar `npm test`

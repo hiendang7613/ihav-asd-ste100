@@ -1,4 +1,5 @@
 **Agents-Zone**
+- guess => the user wants every client logging in before shipping
 - `4:12 PM` the login test fails for the new client => read `src/auth.ts`
 - `4:15 PM` `verifyToken` reads a custom header => changed it to read `Authorization`
 - `4:18 PM` check the fix => ran `npm test`

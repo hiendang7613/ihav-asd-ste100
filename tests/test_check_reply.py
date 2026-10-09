@@ -7,6 +7,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from check_reply import check  # noqa: E402
 
 FULL = """**Agents-Zone**
+- guess => the user wants every client to log in before the release
 - `4:12 PM` the login test fails => read `src/auth.ts`
 - `4:18 PM` check the fix => ran `npm test`
 
@@ -526,6 +527,26 @@ class StyleTests(unittest.TestCase):
         self.assertTrue(any("Agents-Zone line has" in w for w in report["warnings"]), report["warnings"])
         code = FULL.replace("read `src/auth.ts`", "read `src/auth.ts` `src/a.ts` `src/b.ts` `src/c.ts` `src/d.ts` `src/e.ts` `x`")
         self.assertFalse(any("Agents-Zone line" in w for w in check(code)["warnings"]))
+
+    def test_the_first_agents_zone_line_is_the_guess_and_its_absence_only_warns(self):
+        guess = "- guess => the user wants every client to log in before the release\n"
+        self.assertIn(guess, FULL)
+        self.assertFalse(any("guess" in w for w in check(FULL)["warnings"]), check(FULL)["warnings"])
+        for name, text in (("missing", FULL.replace(guess, "")),
+                           ("not first", FULL.replace(guess, "").replace("- `4:18 PM` check the fix", guess + "- `4:18 PM` check the fix")),
+                           ("with a time", FULL.replace("- guess =>", "- `4:10 PM` guess =>")),
+                           ("empty zone", FULL.replace(guess, "").replace("- `4:12 PM` the login test fails => read `src/auth.ts`\n", "")
+                            .replace("- `4:18 PM` check the fix => ran `npm test`\n", ""))):
+            with self.subTest(name=name):
+                report = check(text)
+                self.assertTrue(report["ok"], report)
+                self.assertTrue(any("first Agents-Zone line is '- guess =>" in w for w in report["warnings"]), report["warnings"])
+        long_guess = FULL.replace("the user wants every client to log in before the release",
+                                  "the user wants every client to log in on every device before the big release next week")
+        report = check(long_guess)
+        self.assertTrue(report["ok"], report)
+        self.assertTrue(any("guess line has 17 words (limit 12)" in w for w in report["warnings"]), report["warnings"])
+        self.assertFalse(any("first Agents-Zone line" in w for w in check(FULL[FULL.index("**Admin-Zone**"):])["warnings"]))
 
     def test_q_r_and_i_restart_at_1_in_every_reply(self):
         for old, new in (("**Q1.**", "**Q50.**"), ("**R1.**", "**R30.**"), ("**I1.**", "**I2.**")):

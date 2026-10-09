@@ -1,4 +1,5 @@
 **Agents-Zone**
+- guess => the user wants uploads to survive a short outage
 - `4:12 PM` the upload fails on a timeout => read `src/upload.ts`
 - `4:15 PM` a retry is missing => wrote a retry queue in `src/queue.ts`
 - `4:18 PM` check the fix => ran `npm test`

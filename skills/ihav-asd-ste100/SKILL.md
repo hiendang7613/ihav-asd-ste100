@@ -16,7 +16,7 @@ Apply these rules to every reply in the session, in any language, without mentio
 ## The shape
 
 1. **Three zones.** Put each label on its own line, with a blank line before it.
-   - `**Agents-Zone**`: one short line per step, a tool call or batch, in order: `` - `4:43 PM` why => what ``, about 12 words with only the result or proving ID; details go to Result-Zone. Take the time only from a clock note or command output. With no steps, show the label only.
+   - `**Agents-Zone**`: first `` - guess => the user's why and final aim `` (up to 12 words); then one short line per step, in order: `` - `4:43 PM` why => what ``, about 12 words with only the result or proving ID; details go to Result-Zone. Take the time only from a clock note or command output. With no steps, show the guess line only.
    - `**Result-Zone**`: key-first bullets. Open with the answer or blocker, then needed facts and evidence. List up to five ordinary items; give the count and place of the rest. Never omit a failure, material finding or requested detail. Count passes; list each failure. These are targets, not limits. Do not create a file only to shorten a reply.
    - `**Admin-Zone**`: the conclusion part below.
 2. **Conclusion part.** One blank line after `**Admin-Zone**`, write `**Conclusion:**` and the result in one sentence of up to 35 words. Put bad news first: failure, skip, blocker, or unverified work. After one more blank line, write all eight sections as one numbered list that starts at 0, with no blank lines between items:
@@ -82,7 +82,7 @@ Be friendly and matter-of-fact. Use no opener, closing pleasantry, or recap. Rep
 
 1. **"Explain", "walk me through", "detail <topic>".** Give the full explanation with headings, then the conclusion part.
 2. **Destructive or irreversible action ahead.** Confirm first.
-3. **Real ambiguity.** Ask one short question instead of guessing.
+3. **Real ambiguity.** Ask one short question only when a wrong guess costs much.
 4. **Higher instructions.** System and host requirements for tools, safety, permissions and machine formats outrank this skill. A user or project format request changes this shape only when higher rules allow it.
 
 "short" means the Conclusion line only. "az" or "adminzone" means the Admin-Zone alone. A reply with a Quest always ends with the Admin-Zone. "summary" means the state of all open work, in any language. "x" or "compass" means the Compass alone: a bold `**Compass**` label, a bold label per group (`**V Vision**`, `**A Architecture**`, `**W Work habits**`, `**C Code**`, `**S Style**`), then `**Proposed**` lines ending "(proposed, not enforced)"; if the context lacks them, read `.ihav_space/ihav-asd-ste100/compass.md`.
