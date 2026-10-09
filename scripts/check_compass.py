@@ -4,9 +4,11 @@ Usage:
   python3 scripts/check_compass.py compass.md
   python3 scripts/check_compass.py compass.md --json
 
-Line format: `- V1 text` is active, `- V1? text` is proposed (one letter, digits, an optional ?). The hook sends only
-the active lines to the agent, at most 60 lines and 4 KB. Headings and blank lines are ignored.
-Warnings: a line over 15 words, a repeated ID, a bullet that is not a valid line (it would be ignored), a hook cap that cuts lines.
+Line format: `- V1 [~95%] text` is active, `- V1? [~50%] text` is proposed (one letter, digits, an optional ?, then the
+assistant's confidence as an optional [~N%]; a line without it is valid). The hook sends only the active lines to the
+agent, at most 60 lines and 4 KB, as written. Headings and blank lines are ignored.
+Warnings: a line over 15 words (the [~N%] mark does not count), a percent over 100, a repeated ID, a bullet that is not a
+valid line (it would be ignored), a hook cap that cuts lines.
 Exit 0 (warnings never fail), 1 when the file cannot be read, 2 on wrong usage.
 """
 
@@ -18,6 +20,7 @@ MAX_WORDS = 15
 MAX_LINES = 60
 MAX_BYTES = 4096
 LINE = re.compile(r"^[-*]\s+([A-Za-z][0-9]+)(\?)?\s+(\S.*)$")  # the same pattern as hooks/ste-core.mjs
+PERCENT = re.compile(r"^\[~([0-9]{1,4})%\]\s*")
 
 
 def lint(text):
@@ -33,8 +36,12 @@ def lint(text):
         if ident.upper() in seen:
             warnings.append("line %d repeats the ID %s" % (number, ident))
         seen.add(ident.upper())
-        if len(body.split()) > MAX_WORDS:
-            warnings.append("line %d (%s) has %d words (limit %d); the hook keeps it" % (number, ident, len(body.split()), MAX_WORDS))
+        percent = PERCENT.match(body)
+        words = len(PERCENT.sub("", body).split())
+        if percent and int(percent.group(1)) > 100:
+            warnings.append("line %d (%s) has [~%s%%]; use 0 to 100" % (number, ident, percent.group(1)))
+        if words > MAX_WORDS:
+            warnings.append("line %d (%s) has %d words (limit %d); the hook keeps it" % (number, ident, words, MAX_WORDS))
         (proposed if mark else active).append("%s %s" % (ident, body))
     size = len("; ".join(active).encode())
     if len(active) > MAX_LINES or size > MAX_BYTES:

@@ -77,6 +77,7 @@ class SkillTests(unittest.TestCase):
         for rule in ("With a Compass list in context, put `X. **Compass:**` first, above Goals: up to 5 lines this reply touches",
                      "``- **More:** N other lines; type `x` to see all.``", "A conflict with a line adds `- **X!** V1: what, why; choose in Quests.`",
                      "Small and exact-output replies get no X", "\"x\" or \"compass\" means the Compass alone",
+                     "as `- **V1.** [~N%] text`", "except in L progress and X lines",
                      "\"(proposed, not enforced)\"", ".ihav_space/ihav-asd-ste100/compass.md"):
             self.assertIn(rule, self.text)
         self.assertIn("do not count syllable spaces as words", self.text)

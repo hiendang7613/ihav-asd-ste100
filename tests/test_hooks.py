@@ -257,6 +257,15 @@ class HookTests(unittest.TestCase):
         self.assertEqual(self.prompt(project, session="m"), "")
         self.assertEqual(self.prompt(project, session="n", IHAV_ASD_STE100="off"), "")
 
+    def test_compass_percent_marks_reach_the_reminder_as_written(self):
+        text = "- V1 [~95%] Connect many vendors; own no complex harness.\n- V2 No percent on this older line.\n- V4? [~50%] A guess.\n"
+        project = self.project(text)
+        out = self.prompt(project, session="pc")
+        self.assertIn("): V1 [~95%] Connect many vendors; own no complex harness; V2 No percent on this older line. Show X.", out)
+        self.assertIn("as `- **ID.** [~N%] text` (copy each percent)", out)
+        self.assertNotIn("A guess", out)
+        self.assertIn("Proposed, not enforced (for the x reply only): V4 [~50%] A guess.", self.prompt(project, "x", session="pc"))
+
     def test_compass_lines_are_cleaned_and_a_foreign_file_format_is_ignored(self):
         text = "\ufeff- V1\tA  spaced\t line.\r\n- V2 Two sentences. Kept;\r\n## - V3 heading\r\n  - V4 indented\r\n-V5 no space\r\n- 7 digit first\r\n- VV1 two letters\r\n"
         out = self.prompt(self.project(text), session="p")

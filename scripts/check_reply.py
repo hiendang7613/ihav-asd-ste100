@@ -10,8 +10,9 @@ The check covers what can be checked mechanically: the three zone labels and ste
 ASCII structure, exact English labels,
 section order and indentation, bold-key sub-items, option markers, duplicate conclusions, emoji and square brackets,
 sentence length, openers and closers.
-An optional first section `X. **Compass:**` (up to 5 compass lines, a last More item, X! deviation items) and the
-Compass-alone reply to "x" are checked too; a project without a Compass file never has them.
+An optional first section `X. **Compass:**` (up to 5 compass lines, each optionally opening with the confidence
+[~95%], a last More item, X! deviation items) and the Compass-alone reply to "x" are checked too; a project without a
+Compass file never has them.
 It cannot judge meaning, accuracy or tone; a passing reply can still be wrong.
 
 Any language: body text can use any language. Structural numbers, labels and colons stay in ASCII.
@@ -39,6 +40,9 @@ BAR_WIDTH = 10
 # An L line opens with the agent's estimate and a bar, one # per 10 percent: **L1.** [~80%] [########--] | aim
 L_PROGRESS = re.compile(r"^\[~([0-9]{1,3})%%\] \[([#-]{%d})\] \| \S" % BAR_WIDTH)
 L_PROGRESS_LINE = re.compile(r"(?m)^(   [-*] \*\*L[0-9]+\.\*\* )\[~[0-9]{1,3}%%\] \[[#-]{%d}\]" % BAR_WIDTH)
+# A Compass line may open with the assistant's confidence: **V1.** [~95%] text. Without it the line is valid too.
+COMPASS_PERCENT = re.compile(r"^\[~([0-9]{1,3})%\]\s+\S")
+COMPASS_PERCENT_LINE = re.compile(r"(?m)^(   [-*] \*\*[A-Za-z][0-9]+\.\*\* )\[~[0-9]{1,3}%\]")
 MAX_STEP_WORDS = 16
 MAX_CONCLUSION_WORDS = 35  # 25 until 0.19.3; technical replies in every room ran 26 to 56
 MAX_SENTENCE_WORDS = 25
@@ -272,13 +276,14 @@ def goal_problems(sub_items):
 
 
 def goals_progress_removed(text):
-    """Remove the [~80%] [########--] prefix from L lines inside the Goals section only, the one place brackets are allowed."""
+    """Remove the only brackets the rules allow: the [~80%] [########--] prefix of L lines inside the Goals section
+    and the [~95%] prefix of lines inside the Compass section X."""
     lines = text.split("\n")
-    start = next((i for i, line in enumerate(lines) if re.match(r"^0\.\s+\*\*Goals:\*\*", line)), None)
-    if start is None:
-        return text
-    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^[0-9]\.\s", lines[i])), len(lines))
-    lines[start + 1:end] = [L_PROGRESS_LINE.sub(r"\1", line) for line in lines[start + 1:end]]
+    for head, prefix in ((r"^0\.\s+\*\*Goals:\*\*", L_PROGRESS_LINE), (r"^X\.\s+\*\*Compass:\*\*", COMPASS_PERCENT_LINE)):
+        start = next((i for i, line in enumerate(lines) if re.match(head, line)), None)
+        if start is not None:
+            end = next((i for i in range(start + 1, len(lines)) if re.match(r"^[0-9X]\.\s", lines[i])), len(lines))
+            lines[start + 1:end] = [prefix.sub(r"\1", line) for line in lines[start + 1:end]]
     return "\n".join(lines)
 
 
@@ -362,6 +367,16 @@ def zone_problems(text):
     return problems
 
 
+def percent_problems(ident, text):
+    """A Compass line opens with its confidence as [~95%] (0 to 100) or not at all."""
+    if not text.startswith("["):
+        return []
+    match = COMPASS_PERCENT.match(text)
+    if not match:
+        return ["Compass line %s opens with [~95%%] (your estimate), then the text." % ident]
+    return ["Compass line %s estimate is %s%%; use 0 to 100." % (ident, match.group(1))] if int(match.group(1)) > 100 else []
+
+
 def compass_problems(order, compass, quests):
     """The optional first section: up to 5 lines `- **V1.** text`, then `- **X!** V1: what, why; choose in Quests.`
     items, then at most one last `- **More:** N other lines; type `x` to see all.` The checker cannot know how many
@@ -390,6 +405,9 @@ def compass_problems(order, compass, quests):
     lines = [i for i in items if re.match(r"^\*\*%s\.\*\*\s+\S" % COMPASS_ID, i)]
     more = [i for i in items if i.startswith("**More:**")]
     deviations = [i for i in items if i.startswith("**X!**")]
+    for item in lines:
+        ident, text = re.match(r"^\*\*(%s)\.\*\*\s+(\S.*)$" % COMPASS_ID, item).groups()
+        problems.extend(percent_problems(ident, text))
     for item in items:
         if item not in lines and item not in more and item not in deviations:
             problems.append("Section X item must be **V1.** text, **X!** V1: what, why; choose in Quests., or **More:** N other lines: %s..." % item[:30])
@@ -435,6 +453,7 @@ def compass_alone_problems(text):
             else:
                 problems.append("Group label is one letter and its name, for example **V Vision**: **%s**" % name)
         elif item:
+            problems.extend(percent_problems(item.group(1), item.group(2)))
             marked = item.group(2).endswith(PROPOSED_MARK)
             if seen_proposed and not marked:
                 problems.append("Proposed line %s must end with %s." % (item.group(1), PROPOSED_MARK))

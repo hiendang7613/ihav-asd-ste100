@@ -41,7 +41,7 @@ const COMPASS_MAX_LINE = 400;
 const COMPASS_LINE = /^[-*]\s+([A-Za-z][0-9]+)(\?)?\s+(\S.*)$/;
 const COMPASS_ALL = new Set(["x", "compass", "/x", "/compass"]);  // the prompts that ask for the Compass alone
 const COMPASS_RULE =
-  "Show X. **Compass:** first, above 0. **Goals:**, up to 5 lines this reply touches as `- **ID.** text`, then " +
+  "Show X. **Compass:** first, above 0. **Goals:**, up to 5 lines this reply touches as `- **ID.** [~N%] text` (copy each percent), then " +
   "``- **More:** N other lines; type `x` to see all.`` if more exist; a conflict with a line adds " +
   "`- **X!** ID: what, why; choose in Quests.` Small or exact-output replies get no X.";
 

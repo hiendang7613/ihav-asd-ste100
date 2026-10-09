@@ -118,7 +118,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 | `7. **Ideas:**` | Ideas the agent proposes, each **I1.** with a choice: plan, skip or later | You |
 
 - **All eight sections, always, as one list from 0 to 7.** An empty one shows only its label, so you always see whether anything runs, waits or comes next. One blank line separates the list from the Conclusion line; none separates the sections. Each zone label sits on its own line after a blank line. You can answer "Q1 a, R1 c, I1 b" in one line.
-- **Goals:** list L, G, then B lines. Only the user sets a long-term aim. Each L line opens with the agent's estimate and a ten-character ASCII bar, one `#` per 10 percent, then a pipe and the aim: `[~70%] [#######---] | Every client can log in.` These are the only square brackets allowed. G lines (current goals) and B lines (deferred work) are plain text.
+- **Goals:** list L, G, then B lines. Only the user sets a long-term aim. Each L line opens with the agent's estimate and a ten-character ASCII bar, one `#` per 10 percent, then a pipe and the aim: `[~70%] [#######---] | Every client can log in.` These and the Compass `[~N%]` mark are the only square brackets allowed. G lines (current goals) and B lines (deferred work) are plain text.
 - **The recommended option** is written as `<a>` in code; the other options are (b), (c). You answer with one letter.
 - **Small answers stay small:** one fact, one sentence. Code-only, JSON-only and one-command requests get exactly that.
 - **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to a B line in Goals.
@@ -134,15 +134,15 @@ Long projects drift: the agent forgets the code style, the working habits, then 
 ```markdown
 <!-- .ihav_space/ihav-asd-ste100/compass.md : only the admin edits this file -->
 ## V Vision
-- V1 Connect many vendors; own no complex harness.
+- V1 [~95%] Connect many vendors; own no complex harness.
 ## C Code
-- C1 Names are easy to read and predictable.
-- C2? New code reads like the code around it.
+- C1 [~90%] Names are easy to read and predictable.
+- C2? [~50%] New code reads like the code around it.
 ```
 
 | Part | Rule |
 |---|---|
-| Line | `- V1 text` is active; `- V1? text` is proposed and not enforced until you remove the `?`. The ID is one letter and digits and never changes. At most 15 words. Headings and blank lines are ignored |
+| Line | `- V1 text` is active; `- V1? text` is proposed and not enforced until you remove the `?`. The ID is one letter and digits and never changes. At most 15 words. Headings and blank lines are ignored. After the ID you may add `[~95%]`, how sure the assistant is that the line is your view; the hook sends it as written, it does not count as a word, and the reply copies it into the X line |
 | Groups | V Vision, A Architecture, W Work habits, C Code, S Style; any other letter is allowed |
 | Where | `<project>/.ihav_space/ihav-asd-ste100/compass.md`, searched from the hook's `cwd` up to the git root; the first file wins. No file, no change |
 | What the agent sees | Every active line, every prompt, in the hook's reminder (up to 60 lines and 4 KB; the reminder says how many were cut). Proposed lines are not sent |

@@ -48,7 +48,7 @@ Apply these rules to every reply in the session, in any language, without mentio
 
    Show all eight; an empty section shows only its label. Keep labels exactly as shown in English; keep numbers, structural colons, IDs, `Approve:` and `<a>` in ASCII. Never put text on a section-label line. Indent items three spaces, starting with a bold key, and options five. Goals always has an L. Only the user sets L aims; with none, propose one in Quests as plain text. The ~ percent is your estimate, one # per 10% in the bar; a finished aim stays at 100%. G and B lines are plain. Give each item one home: decisions in Quests, ideas in Ideas, authorized work in Todos, outside waits in Pending, deferred work as B lines. Do safe, reversible work yourself; ask only for user decisions. Start approvals with `Approve:`; name action and target, and state what cannot be undone. Number Q, R and I from 1 in every reply, so Q1.a means the latest reply; L, G and B IDs stay stable. Mark one option `<a>` in code; others (b), (c). Each risk and idea ends with one choice line. An empty Risks label means you checked and found none.
 
-   **Compass.** With a Compass list in context, put `X. **Compass:**` first, above Goals: up to 5 lines this reply touches, as `- **V1.** text`, then ``- **More:** N other lines; type `x` to see all.`` if more exist. A conflict with a line adds `- **X!** V1: what, why; choose in Quests.` and the Quests choice. Small and exact-output replies get no X.
+   **Compass.** With a Compass list in context, put `X. **Compass:**` first, above Goals: up to 5 lines this reply touches, as `- **V1.** [~N%] text`, then ``- **More:** N other lines; type `x` to see all.`` if more exist. A conflict with a line adds `- **X!** V1: what, why; choose in Quests.` and the Quests choice. Small and exact-output replies get no X.
 3. **The Conclusion stands alone.** Use one marker. State the result and decisive caveat; add no new fact or evidence list. Name the source when relaying peers; never paste their block or write "see above".
 4. **Small answers stay small.** A one-fact answer or a yes/no is one or two sentences, with no conclusion part.
 5. **Exact output wins.** When the user asks for only code, JSON, one command, a commit message or a file, return exactly that. If they also ask for an explanation, put the exact output in one fenced block and explain outside it.
@@ -58,7 +58,7 @@ Apply these rules to every reply in the session, in any language, without mentio
 ## Format for fast reading
 
 1. Start bullets with a bold key or code path; name the topic first.
-2. Body, status and question text follow the user's latest language. Use no emoji or square brackets, except in L progress.
+2. Body, status and question text follow the user's latest language. Use no emoji or square brackets, except in L progress and X lines.
 3. Put paths, commands, IDs, settings, quoted errors and `<a>` in `code`.
 4. Bold labels and at most one key phrase per bullet. Do not wrap a reply in a code block.
 5. Number steps; use bullets for parallel items; use at most two levels.

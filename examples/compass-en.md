@@ -13,8 +13,8 @@
 **Conclusion:** Uploads retry now and all 31 tests pass, but the new queue conflicts with compass line A1.
 
 X. **Compass:**
-   - **A1.** Use each vendor's own feature before building one.
-   - **W6.** Run the tests and read the summary before every commit.
+   - **A1.** [~90%] Use each vendor's own feature before building one.
+   - **W6.** [~72%] Run the tests and read the summary before every commit.
    - **X!** A1: I built my own retry queue, the storage SDK has a `maxRetries` option; choose in Quests.
    - **More:** 4 other lines; type `x` to see all.
 0. **Goals:**

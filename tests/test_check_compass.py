@@ -29,6 +29,16 @@ class CompassLintTests(unittest.TestCase):
         self.assertTrue(any("line 8 (V3) has 16 words (limit 15)" in w for w in report["warnings"]), report["warnings"])
         self.assertEqual(lint(SAMPLE + "- V3 " + " ".join(["word"] * 15) + "\n")["warnings"], [])
 
+    def test_a_percent_mark_is_valid_and_is_not_a_word(self):
+        fifteen = " ".join(["word"] * 15)
+        report = lint(SAMPLE + "- V3 [~95%%] %s\n- V4? [~50%%] A proposed line.\n" % fifteen)
+        self.assertEqual((report["active"], report["proposed"], report["warnings"]), (4, 2, []))
+        marked, plain = lint(SAMPLE + "- V3 [~95%] x\n"), lint(SAMPLE + "- V3 x\n")
+        self.assertEqual(marked["injected_bytes"] - plain["injected_bytes"], len("[~95%] "))  # the hook sends the mark
+        self.assertTrue(any("(V3) has 16 words" in w for w in lint(SAMPLE + "- V3 [~95%%] %s word\n" % fifteen)["warnings"]))
+        over = lint(SAMPLE + "- V3 [~120%] Too sure.\n")["warnings"]
+        self.assertTrue(any("(V3) has [~120%]; use 0 to 100" in w for w in over), over)
+
     def test_repeated_ids_and_ignored_bullets_are_warned(self):
         report = lint(SAMPLE + "- V1 Again.\n- V3: colon after the ID.\n-V4 no space.\n- 5 digit first.\n")
         self.assertTrue(any("repeats the ID V1" in w for w in report["warnings"]), report["warnings"])

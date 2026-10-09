@@ -379,6 +379,34 @@ class CompassTests(unittest.TestCase):
         with_zone = COMPASS_ALONE + "\n**Admin-Zone**\n"
         self.assertFalse(check(with_zone)["ok"])
 
+    def test_a_compass_line_may_carry_its_confidence_percent_and_old_lines_stay_valid(self):
+        marked = COMPASS_X.replace("**V1.** Connect", "**V1.** [~95%] Connect").replace("**C1.** Names", "**C1.** [~0%] Names")
+        self.assertNotEqual(marked, COMPASS_X)
+        report = check(with_compass(marked))
+        self.assertTrue(report["ok"], report)
+        self.assertEqual(report["stats"]["compass_lines"], 2)
+        mixed = COMPASS_X.replace("**V1.** Connect", "**V1.** [~100%] Connect")  # the other line has no percent
+        self.assertTrue(check(with_compass(mixed))["ok"])
+        alone = COMPASS_ALONE.replace("**V1.** Connect", "**V1.** [~95%] Connect").replace("**W5.** Add", "**W5.** [~50%] Add")
+        self.assertTrue(check(alone)["ok"], check(alone))
+
+    def test_a_bad_compass_percent_fails_and_brackets_stay_banned_elsewhere(self):
+        for percent, expected in (("[~120%]", "estimate is 120%"), ("[95%]", "opens with [~95%]"), ("[~95]", "opens with [~95%]"),
+                                  ("[~95%]Connect", "opens with [~95%]")):
+            with self.subTest(percent=percent):
+                text = with_compass(COMPASS_X.replace("**V1.** Connect", "**V1.** %s Connect" % percent))
+                self.assertTrue(any(expected in v for v in self.messages(text)), self.messages(text))
+                alone = COMPASS_ALONE.replace("**V1.** Connect", "**V1.** %s Connect" % percent)
+                self.assertTrue(any(expected in v for v in self.messages(alone)), self.messages(alone))
+        for where, text in (
+                ("a Goals G line", FULL.replace("**G1.** Fix the login test.", "**G1.** [~50%] Fix the login test.")),
+                ("a Quests line", FULL.replace("**Q1.** Approve:", "**Q1.** [~50%] Approve:")),
+                ("a Compass More line", with_compass(COMPASS_X.replace("**More:** 12", "**More:** [~50%] 12"))),
+                ("the Conclusion", FULL.replace("Login is fixed;", "[~50%] Login is fixed;"))):
+            with self.subTest(where=where):
+                self.assertIn("[~50%]", text)
+                self.assertFalse(check(text)["ok"], where)
+
     def test_the_shipped_compass_examples_pass(self):
         for name in ("compass-en.md", "compass-x-en.md"):
             with self.subTest(name=name):
