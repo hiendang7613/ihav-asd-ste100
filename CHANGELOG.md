@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+One reply wording for this plugin and for Agent Room (branch `reply-sync`). No version is set yet.
+- X Compass lines may carry the assistant's confidence: `- **V1.** [~95%] text`. The admin's compass files read `- V1 [~95%] text` (active) and `- V4? [~50%] text` (proposed); the hook already printed them as written. The checker accepts the percent in the X section and in the reply to `x`, fails one over 100 or in another form, and keeps lines without a percent valid. `scripts/check_compass.py` no longer counts the percent as a word and warns about one over 100.
+- Evidence marks: write `(inferred)` or `(not checked)` after a fact you did not verify, and name the source for the rest; there is no `(checked)`. The checker warns about `(checked)`, `(verified)`, `(unverified)`, `(unchecked)` and `(not verified)` outside code.
+- Pending items open with `Waiting on <who or what>:`, as the bold key or right after it. The checker warns, and does not fail, about one that does not.
+- The first Agents-Zone line is `- guess => the user's why and final aim` (up to 12 words, no time), and a real ambiguity asks one short question only when a wrong guess costs much. The prompt reminder says the same; its test limit rises from 520 to 570 bytes. The checker warns when the guess line is missing or longer than 12 words.
+- `python3 scripts/check_reply.py POST.txt --profile room` checks a post of Agent Room: the same three zones, with no clock, only the sections Todos, Pending and Quests (each only with items), a status word allowed at the start of the Conclusion, at most 5 lines per zone, one `<a>` per question, and the `- guess =>` first line required. A post without zone labels passes. `examples/room-report-samples.json` is a byte-equal copy of the samples file in ihav-agent-room-ui; `tests/test_room_samples.py` runs it, and the two copies must have equal sha256 hashes.
+- `SKILL.md` stays at 7,790 bytes (7,793 before): about 180 bytes of text that the template or the checker already said were cut to pay for the new rules.
+- Not in this change: Conclusion first by default, Done as work since the last turn, length limits for bullets and questions (they need the admin's own session data), and `wip/0.20.0-compact`.
+
 ## 0.20.0 — 2026-10-09
 New optional section `X. **Compass:**`, chosen by the admin of the first user project. A project without a Compass file sees no change in the hook output or in the reply shape.
 - A project keeps its core views, from code style to what the app is for, in `<project>/.ihav_space/ihav-asd-ste100/compass.md`. `- V1 text` is an active line and `- V1? text` is a proposed line; the ID is one letter and digits and never changes. Common groups: V Vision, A Architecture, W Work habits, C Code, S Style. A line has at most 15 words. Headings and blank lines are ignored. Only the admin edits the file.
