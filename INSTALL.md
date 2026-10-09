@@ -38,9 +38,21 @@ Codex loads the skill and the plugin hooks from `hooks/hooks.json`. On first ins
 
 The commands above use the Codex CLI. The ChatGPT web app does not deploy local hook scripts into its runtime.
 
+## Compass (optional, per project)
+
+A project that wants its core views kept in front of the agent adds one file, `<project>/.ihav_space/ihav-asd-ste100/compass.md`, with lines such as `- V1 text` (active) and `- V1? text` (proposed). The hook finds it from the session's working folder up to the git root. Projects without the file are unchanged. A git worktree needs its own copy (or a committed file), because `.ihav_space/` is not shared between worktrees. Details: [README](README.md#compass).
+
+```bash
+node <plugin folder>/scripts/install-x.mjs      # optional: a personal /x command that shows the Compass alone
+python3 <plugin folder>/scripts/check_compass.py <project>/.ihav_space/ihav-asd-ste100/compass.md
+```
+
+After updating the plugin, run `node <its cache folder>/scripts/activate.mjs` (see the README) so open sessions get the new rules once.
+
 ## Uninstall
 
 ```bash
 claude plugin uninstall ihav-asd-ste100
+node <plugin folder>/scripts/install-x.mjs --remove   # only if you installed /x
 rm -f ~/.claude/.ihav-asd-ste100-off ~/.codex/.ihav-asd-ste100-off
 ```

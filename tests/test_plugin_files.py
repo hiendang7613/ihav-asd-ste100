@@ -44,9 +44,9 @@ class SkillTests(unittest.TestCase):
         self.assertIn("disable-model-invocation: true", self.front)
 
     def test_skill_stays_small_because_always_on_injects_it_every_session(self):
-        # 7,100 bytes (6,900 until 0.15.0, 6,500 until 0.11.0): the Goals section with L, G and B lines costs about
-        # 50 more tokens per session start than the old eight sections.
-        self.assertLessEqual(len(self.text.encode()), 7100)
+        # 7,800 bytes (7,100 until 0.20.0, 6,900 until 0.15.0, 6,500 until 0.11.0): the Compass rules cost about
+        # 175 more tokens per session start than the 0.19.4 text; the Goals section cost about 50 before.
+        self.assertLessEqual(len(self.text.encode()), 7800)
 
     def test_required_sections_and_the_numbered_conclusion_part(self):
         for heading in ("## Persistence", "## The shape", "## Format for fast reading", "## Sentences", "## Protect meaning",
@@ -73,6 +73,11 @@ class SkillTests(unittest.TestCase):
                      "\"az\" or \"adminzone\" means the Admin-Zone alone", "A reply with a Quest always ends with the Admin-Zone", "except in L progress", "about 12 words with only the result or proving ID", "add no new fact or evidence list",
                      "Body, status and question text follow the user's latest language",
                      "A user or project format request changes this shape only when higher rules allow it"):
+            self.assertIn(rule, self.text)
+        for rule in ("With a Compass list in context, put `X. **Compass:**` first, above Goals: up to 5 lines this reply touches",
+                     "``- **More:** N other lines; type `x` to see all.``", "A conflict with a line adds `- **X!** V1: what, why; choose in Quests.`",
+                     "Small and exact-output replies get no X", "\"x\" or \"compass\" means the Compass alone",
+                     "\"(proposed, not enforced)\"", ".ihav_space/ihav-asd-ste100/compass.md"):
             self.assertIn(rule, self.text)
         self.assertIn("do not count syllable spaces as words", self.text)
         for zone in ("`**Agents-Zone**`", "`**Result-Zone**`", "`**Admin-Zone**`"):

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.20.0 — 2026-10-09
+New optional section `X. **Compass:**`, chosen by the admin of the first user project. A project without a Compass file sees no change in the hook output or in the reply shape.
+- A project keeps its core views, from code style to what the app is for, in `<project>/.ihav_space/ihav-asd-ste100/compass.md`. `- V1 text` is an active line and `- V1? text` is a proposed line; the ID is one letter and digits and never changes. Common groups: V Vision, A Architecture, W Work habits, C Code, S Style. A line has at most 15 words. Headings and blank lines are ignored. Only the admin edits the file.
+- The hook looks for the file from the hook input's `cwd` up to the git root; the first file wins. SessionStart and every prompt add the active lines, not the proposed ones, to the context. The caps are 60 lines and 4 KB (400 characters a line, 128 KB read); the reminder says how many lines were cut. An unreadable or odd file never removes the rest of the reminder. Codex uses the same core. Cost: nothing without a file; with one, about 17 tokens per active line and 90 tokens of intro and rule text on every prompt.
+- The reply: `X. **Compass:**` comes first in the list, above Goals, with at most 5 lines that this reply touches (`- **V1.** text`) and, when more exist, `- **More:** N other lines; type `x` to see all.` A step, plan or request that conflicts with a line adds `- **X!** V1: what, why; choose in Quests.` and the choice goes to Quests; with no conflict nothing is written. Small and exact-output replies get no X.
+- `x` or `compass` asks for the Compass alone: all active lines under a bold label per group, then the proposed lines marked `(proposed, not enforced)`. For that prompt only, the hook adds the proposed lines to the context. `node scripts/install-x.mjs` installs a personal `/x` skill the way `install-az.mjs` installs `/az`; both now share `scripts/install-skill.mjs`.
+- The checker accepts a reply with an X section and a Compass-alone reply. It fails an X section that is not first, has more than 5 compass lines, has a `More` item without its count or not last, or has an `X!` item without a line ID or without a choice in Quests. Replies without X pass as before.
+- `scripts/check_compass.py FILE` lints a Compass file: it warns about a line over 15 words, a repeated ID, a bullet the parser would ignore and a file the hook would cut. Warnings never fail.
+- The skill size limit rises from 7,100 to 7,800 bytes, about 175 more tokens per session start in every project, with or without a Compass file.
+
 ## 0.19.4 — 2026-10-08
 - Codex keeps the prompt reminder. The UserPromptSubmit hook now prints its text as `hookSpecificOutput` JSON. Codex 0.160 read the old plain line, which starts with `[`, as broken JSON and dropped it. Claude Code accepts both forms.
 - `scripts/activate.mjs` requires that JSON in its smoke run before it moves the pointer. `--rollback` can still return to a release that prints the old plain line; it then warns on stderr that Codex loses the reminder.

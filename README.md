@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.19.4" src="https://img.shields.io/badge/version-0.19.4-4F46E5">
+  <img alt="Version 0.20.0" src="https://img.shields.io/badge/version-0.20.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
@@ -25,6 +25,7 @@
   <a href="#install">Install</a> ·
   <a href="#shape">The shape</a> ·
   <a href="#format">Format</a> ·
+  <a href="#compass">Compass</a> ·
   <a href="#compare">Compare</a> ·
   <a href="#languages">Languages</a> ·
   <a href="#faq">FAQ</a>
@@ -106,6 +107,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 | **Result-Zone** | The answer or blocker first, then the facts and evidence as key-first bullets | The agent, already |
 | **Admin-Zone** | The Conclusion line and the eight sections below | You decide from here |
 | **Conclusion** | The result in one sentence. Bad news first: failure, skip, blocker, unverified work. | Nobody: it is the verdict |
+| `X. **Compass:**` | Only in a project with a Compass file (see below), first in the list: the admin's core views that this reply touches (at most 5), a `**X!**` line when the work conflicts with one | You set it; the agent keeps to it |
 | `0. **Goals:**` | L lines: user-set long-term aims with the agent's estimated progress; G lines: current goals; B lines: deferred or optional work | You set L; the agent tracks G and B |
 | `1. **Done:**` | Finished and checked work, with its evidence | The agent, already |
 | `2. **Doing:**` | Work running now: builds, jobs, other agents | The agent or a tool, now |
@@ -122,6 +124,33 @@ Every reply that has more than one fact has three zones, each under a bold label
 - **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to a B line in Goals.
 - **Items:** each one is a sub-item under its label that starts with a bold key, such as `   - **Login fix:** merged.` The label line itself stays bare.
 - **Empty section:** show only its numbered English label, for example `4. **Pending:**`.
+
+<a name="compass"></a>
+
+## Compass: core views that do not drift
+
+Long projects drift: the agent forgets the code style, the working habits, then what the app is for. A project can keep its core views in one file, from simple (names, comments) to far (what the app is for):
+
+```markdown
+<!-- .ihav_space/ihav-asd-ste100/compass.md : only the admin edits this file -->
+## V Vision
+- V1 Connect many vendors; own no complex harness.
+## C Code
+- C1 Names are easy to read and predictable.
+- C2? New code reads like the code around it.
+```
+
+| Part | Rule |
+|---|---|
+| Line | `- V1 text` is active; `- V1? text` is proposed and not enforced until you remove the `?`. The ID is one letter and digits and never changes. At most 15 words. Headings and blank lines are ignored |
+| Groups | V Vision, A Architecture, W Work habits, C Code, S Style; any other letter is allowed |
+| Where | `<project>/.ihav_space/ihav-asd-ste100/compass.md`, searched from the hook's `cwd` up to the git root; the first file wins. No file, no change |
+| What the agent sees | Every active line, every prompt, in the hook's reminder (up to 60 lines and 4 KB; the reminder says how many were cut). Proposed lines are not sent |
+| In the reply | `X. **Compass:**` above Goals shows up to 5 lines the reply touches, then `**More:** N other lines; type `x` to see all.` A conflict adds `**X!** V1: what, why; choose in Quests.` and the choice goes to Quests. With no conflict, nothing is written |
+| `x` or `compass` | The Compass alone: active lines grouped by letter, then the proposed lines marked `(proposed, not enforced)`. `node <plugin folder>/scripts/install-x.mjs` adds a `/x` command |
+| Check the file | `python3 scripts/check_compass.py compass.md` warns about long lines, repeated IDs and lines the parser would ignore |
+
+Examples: [a reply with X](examples/compass-en.md) and [the reply to `x`](examples/compass-x-en.md). Treat the file like `CLAUDE.md`: its lines reach the agent as instructions, so read a repository's Compass before you trust it.
 
 <a name="format"></a>
 
@@ -248,18 +277,18 @@ Both are MIT. They agree on more than they differ; pick the one that matches you
 
 ## How it works
 
-1. **Session start:** a hook injects the rules ([SKILL.md](skills/ihav-asd-ste100/SKILL.md), at most 7,100 bytes).
+1. **Session start:** a hook injects the rules ([SKILL.md](skills/ihav-asd-ste100/SKILL.md), at most 7,800 bytes).
 2. **Every prompt:** one reminder line keeps long sessions from drifting.
 3. **Your words win:** `stop ste mode` pauses it for the session; `ste mode` resumes it.
 4. **Exact output wins:** code-only, JSON-only and single-command requests are never wrapped.
 5. **Safe by design:** the hooks never block a session, make no network call, and stay silent on any error.
-6. **Short way to the Admin-Zone:** type `az` or `adminzone`. For a `/az` slash command, run `node <plugin folder>/scripts/install-az.mjs` once; it never overwrites another `az` skill.
+6. **Short way to the Admin-Zone:** type `az` or `adminzone`. For a `/az` slash command, run `node <plugin folder>/scripts/install-az.mjs` once; it never overwrites another `az` skill. The Compass has the same shortcut: `x` or `compass`, and `scripts/install-x.mjs` for `/x`.
 7. **Audit every room:** `python3 scripts/audit_sessions.py` checks the latest full reply of each session from the last two hours. It only reads transcripts.
 8. **New releases reach open sessions:** `hooks/ste-mode.mjs` is a stable launcher. On each event it runs the release named in `~/.ihav/active/ihav-asd-ste100.json`, if that release sits in the ihav plugin cache, and its own copy otherwise. After installing a release, run `node <its cache folder>/scripts/activate.mjs`: a smoke run checks it, then the next prompt in every open session gets the new rules once. Forward activation requires JSON prompt context. `--rollback` returns to the previous release and can restore its recognized legacy STE reminder, with a warning on stderr. On Codex 0.160.0, that legacy reminder causes a hook JSON error and supplies no prompt context; activate a JSON-compatible release to restore the context. Rollback keeps JSON on stdout, and failed checks leave the pointer unchanged.
 
 ## Cost
 
-About 1,700 tokens at session start and about 90 tokens per prompt. Run `claude plugin details ihav-asd-ste100` for your setup.
+About 1,900 tokens at session start and about 90 tokens per prompt. A project with a Compass file adds about 90 tokens of intro and rule text and about 17 tokens per active line to every prompt. Run `claude plugin details ihav-asd-ste100` for your setup.
 
 <a name="faq"></a>
 
