@@ -10,6 +10,8 @@ The check covers what can be checked mechanically: the three zone labels and ste
 ASCII structure, exact English labels,
 section order and indentation, bold-key sub-items, option markers, duplicate conclusions, emoji and square brackets,
 sentence length, openers and closers.
+An optional first section `X. **Compass:**` (up to 5 compass lines, a last More item, X! deviation items) and the
+Compass-alone reply to "x" are checked too; a project without a Compass file never has them.
 It cannot judge meaning, accuracy or tone; a passing reply can still be wrong.
 
 Any language: body text can use any language. Structural numbers, labels and colons stay in ASCII.
@@ -23,6 +25,11 @@ import sys
 
 SECTIONS = {0: "Goals", 1: "Done", 2: "Doing", 3: "Todos", 4: "Pending", 5: "Quests", 6: "Risks", 7: "Ideas"}
 GOALS, QUESTIONS, RISKS, IDEAS = 0, 5, 6, 7
+COMPASS = -1  # the optional section "X. **Compass:**", first in the list, above Goals
+COMPASS_GROUPS = {"V": "Vision", "A": "Architecture", "W": "Work habits", "C": "Code", "S": "Style"}
+MAX_COMPASS_LINES = 5
+COMPASS_ID = r"[A-Za-z][0-9]+"
+PROPOSED_MARK = "(proposed, not enforced)"
 # Numbered lists: Goals items are **L1.** (long-term aim), **G1.** (current goal) and **B1.** (deferred work);
 # decision lists use **Q1.**, **R1.** and **I1.**.
 ID_KEYS = {GOALS: "LGB", QUESTIONS: "Q", RISKS: "R", IDEAS: "I"}
@@ -46,8 +53,8 @@ NO_SPACE_SCRIPTS = [  # (regex, characters per English-word equivalent); see doc
 EMOJI = re.compile(r"[☀-➿⬀-⯿⌀-⏿\U0001F000-\U0001FAFF️]")
 SENTENCE_END = r"(?<=[.!?。！？؟।])\s*"
 CONCLUSION_LINE = re.compile(r"^\*\*([^*:\n]{1,30}):\*\*\s*(\S.*)$")
-SECTION_LINE = re.compile(r"^([0-9])\.\s+\*\*([^*:\n]{1,30}):\*\*\s*(.*)$")
-SECTION_CANDIDATE = re.compile(r"(?m)^\d+\.\s+\*\*[^*\n]{1,30}[:：]\*\*")
+SECTION_LINE = re.compile(r"^([0-9X])\.\s+\*\*([^*:\n]{1,30}):\*\*\s*(.*)$")
+SECTION_CANDIDATE = re.compile(r"(?m)^(?:\d+|X)\.\s+\*\*[^*\n]{1,30}[:：]\*\*")
 MALFORMED_CONCLUSION = re.compile(r"(?m)^\*\*Conclusion：\*\*")
 FULLWIDTH_MARKER_LINE = re.compile(r"(?m)^\s*(?:[-*]\s+)?\*\*[^*\n]{1,40}：\*\*")
 SUB_ITEM = re.compile(r"^\s{2,}[-*]\s+(.*)$")
@@ -163,7 +170,8 @@ def split_reply(text):
     for line in tail:
         match = SECTION_LINE.match(line)
         if match:
-            sections.append((int(match.group(1)), match.group(2).strip(), match.group(3).strip(), []))
+            number = COMPASS if match.group(1) == "X" else int(match.group(1))
+            sections.append((number, match.group(2).strip(), match.group(3).strip(), []))
         elif SUB_ITEM.match(line) and sections:
             sections[-1][3].append(line)
     return "\n".join(body_lines), conclusion.group(1).strip(), conclusion.group(2).strip(), sections, problems
@@ -354,10 +362,105 @@ def zone_problems(text):
     return problems
 
 
+def compass_problems(order, compass, quests):
+    """The optional first section: up to 5 lines `- **V1.** text`, then `- **X!** V1: what, why; choose in Quests.`
+    items, then at most one last `- **More:** N other lines; type `x` to see all.` The checker cannot know how many
+    compass lines exist, so it checks that the More count is written, not that it is right."""
+    if not compass:
+        return []
+    problems = []
+    if order.count(COMPASS) > 1:
+        problems.append("Write the Compass section X once.")
+    if order[0] != COMPASS:
+        problems.append("Section X (Compass) goes first, above 0. **Goals:**.")
+    _, label, line, subs = compass[0]
+    if label != "Compass":
+        problems.append("Section X label must be 'Compass'; found '%s'." % label)
+    if line.strip():
+        problems.append("Section X must show its label only on its line; write each item below it as a sub-item.")
+    items = []
+    keyed = re.compile(r"^\*\*(?:%s\.|More:|X!)\*\*" % COMPASS_ID)
+    for sub in subs:
+        indent = len(sub) - len(sub.lstrip())
+        item = SUB_ITEM.match(sub).group(1)
+        if indent <= 3 or keyed.match(item):
+            if indent != 3:
+                problems.append("Top-level items in section X must be indented exactly 3 spaces.")
+            items.append(item)
+    lines = [i for i in items if re.match(r"^\*\*%s\.\*\*\s+\S" % COMPASS_ID, i)]
+    more = [i for i in items if i.startswith("**More:**")]
+    deviations = [i for i in items if i.startswith("**X!**")]
+    for item in items:
+        if item not in lines and item not in more and item not in deviations:
+            problems.append("Section X item must be **V1.** text, **X!** V1: what, why; choose in Quests., or **More:** N other lines: %s..." % item[:30])
+    if len(lines) > MAX_COMPASS_LINES:
+        problems.append("Section X shows at most %d compass lines; found %d. Put the rest in a More item." % (MAX_COMPASS_LINES, len(lines)))
+    if len(more) > 1 or (more and items[-1] != more[0]):
+        problems.append("Section X has one More item, and it is the last item.")
+    for item in more:
+        if not re.search(r"[0-9]", item) or "`x`" not in item:
+            problems.append("The More item needs the count: **More:** N other lines; type `x` to see all.")
+    for item in deviations:
+        if not re.match(r"^\*\*X!\*\*\s+%s:\s+\S" % COMPASS_ID, item):
+            problems.append("An X! item names the line: **X!** V1: what conflicts, why; choose in Quests.")
+    if deviations and not quests:
+        problems.append("An X! deviation needs its choice in section 5 (Quests).")
+    return problems
+
+
+def compass_alone_problems(text):
+    """The reply to "x" or "compass": the bold **Compass** label, then a bold label line for each group
+    (**V Vision**) with `- **V1.** text` items, then **Proposed** with items ending (proposed, not enforced).
+    No other zone, no Conclusion."""
+    lines = text.strip().splitlines()
+    problems, group, seen_proposed = [], None, False
+    for index, line in enumerate(lines[1:], start=1):
+        if not line.strip():
+            continue
+        label = re.match(r"^\*\*([^*\n]{1,40})\*\*$", line)
+        item = re.match(r"^- \*\*(%s)\.\*\* (\S.*)$" % COMPASS_ID, line)
+        if label:
+            name = label.group(1)
+            if lines[index - 1].strip():
+                problems.append("Put a blank line before **%s**." % name)
+            if name == "Proposed":
+                group, seen_proposed = None, True
+            elif seen_proposed:
+                problems.append("**Proposed** comes after every group.")
+            elif re.fullmatch(r"[A-Za-z]( .+)?", name):
+                letter = name[0].upper()
+                if letter in COMPASS_GROUPS and name != "%s %s" % (letter, COMPASS_GROUPS[letter]):
+                    problems.append("Group label must be **%s %s**; found **%s**." % (letter, COMPASS_GROUPS[letter], name))
+                group = letter
+            else:
+                problems.append("Group label is one letter and its name, for example **V Vision**: **%s**" % name)
+        elif item:
+            marked = item.group(2).endswith(PROPOSED_MARK)
+            if seen_proposed and not marked:
+                problems.append("Proposed line %s must end with %s." % (item.group(1), PROPOSED_MARK))
+            if not seen_proposed and marked:
+                problems.append("Line %s is marked proposed; list it under **Proposed**." % item.group(1))
+            if group and not seen_proposed and item.group(1)[0].upper() != group:
+                problems.append("Line %s is under group %s." % (item.group(1), group))
+            if not group and not seen_proposed:
+                problems.append("Line %s needs a group label first." % item.group(1))
+        else:
+            problems.append("A Compass reply holds only group labels and `- **V1.** text` items: %s" % line[:40])
+    return problems
+
+
 def check(text):
+    first = next((line.strip() for line in mask_code(text).splitlines() if line.strip()), "")
+    if first == "**Compass**":
+        problems = compass_alone_problems(mask_code(text))
+        return {"ok": not problems, "violations": problems, "warnings": [],
+                "stats": {"words": units(strip_code(text)), "compass_alone": True}}
     body, conclusion_label, conclusion, sections, layout = split_reply(text)
     words = units(strip_code(text))
     violations, warnings = [], []
+    order = [number for number, _, _, _ in sections]
+    compass = [section for section in sections if section[0] == COMPASS]
+    sections = [section for section in sections if section[0] != COMPASS]
 
     if conclusion is None:
         outside_code = strip_code(text)
@@ -379,6 +482,8 @@ def check(text):
         if numbers != sorted(set(numbers)) or any(n not in SECTIONS for n in numbers):
             violations.append("Sections must be numbered 0 to 7, in order, each once; found %s." % numbers)
         violations.extend(layout)
+        quests = [line for number, _, _, subs in sections if number == QUESTIONS for line in subs]
+        violations.extend(compass_problems(order, compass, quests))
         for number, label, line, subs in sections:
             if number in SECTIONS and label != SECTIONS[number]:
                 violations.append("Section %d label must be '%s'; found '%s'." % (number, SECTIONS[number], label))
@@ -442,6 +547,8 @@ def check(text):
             "body_words": body_words,
             "conclusion_words": units(conclusion) if conclusion else 0,
             "sections": [number for number, _, _, _ in sections],
+            "compass_lines": sum(bool(re.match(r"^\s+[-*]\s+\*\*%s\.\*\*" % COMPASS_ID, sub))
+                                 for _, _, _, subs in compass for sub in subs),
             "longest_sentence": max((units(s) for s in body_sentences), default=0),
         },
     }

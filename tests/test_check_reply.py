@@ -260,6 +260,132 @@ class ShapeTests(unittest.TestCase):
                 self.assertTrue(any("indent" in violation.lower() for violation in report["violations"]), report)
 
 
+COMPASS_X = """X. **Compass:**
+   - **V1.** Connect many vendors; own no complex harness.
+   - **C1.** Names are easy to read and predictable.
+   - **More:** 12 other lines; type `x` to see all.
+"""
+
+COMPASS_ALONE = """**Compass**
+
+**V Vision**
+- **V1.** Connect many vendors; own no complex harness.
+
+**A Architecture**
+- **A1.** Use each vendor's own feature before building one.
+
+**Z**
+- **Z1.** A line in a group without a name.
+
+**Proposed**
+- **W5.** Add only your own files to a commit (proposed, not enforced)
+"""
+
+
+def with_compass(section=COMPASS_X, base=FULL):
+    return base.replace("0. **Goals:**", section + "0. **Goals:**", 1)
+
+
+class CompassTests(unittest.TestCase):
+    """The optional first section X. **Compass:** and the Compass-alone reply to "x"."""
+
+    def messages(self, text):
+        return check(text)["violations"]
+
+    def test_a_reply_without_x_still_passes_and_with_x_it_is_valid(self):
+        self.assertTrue(check(FULL)["ok"])
+        self.assertEqual(check(FULL)["stats"]["compass_lines"], 0)
+        report = check(with_compass())
+        self.assertTrue(report["ok"], report)
+        self.assertEqual(report["stats"]["sections"], list(range(8)))
+        self.assertEqual(report["stats"]["compass_lines"], 2)
+
+    def test_x_may_show_only_its_label_or_five_lines_or_none_of_the_extras(self):
+        self.assertTrue(check(with_compass("X. **Compass:**\n"))["ok"])
+        five = "X. **Compass:**\n" + "".join("   - **V%d.** A view.\n" % n for n in range(1, 6))
+        self.assertTrue(check(with_compass(five))["ok"], check(with_compass(five)))
+        six = five + "   - **V6.** A view.\n"
+        self.assertTrue(any("at most 5 compass lines; found 6" in v for v in self.messages(with_compass(six))))
+        any_letter = "X. **Compass:**\n   - **Q9.** A line in a group the admin invented.\n"
+        self.assertTrue(check(with_compass(any_letter))["ok"])
+
+    def test_x_goes_first_above_goals(self):
+        after_ideas = FULL + COMPASS_X
+        self.assertTrue(any("goes first" in v for v in self.messages(after_ideas)), self.messages(after_ideas))
+        middle = FULL.replace("1. **Done:**", COMPASS_X + "1. **Done:**")
+        self.assertTrue(any("goes first" in v for v in self.messages(middle)), self.messages(middle))
+        twice = with_compass(COMPASS_X + COMPASS_X)
+        self.assertTrue(any("once" in v for v in self.messages(twice)), self.messages(twice))
+
+    def test_the_more_item_needs_its_count_comes_last_and_appears_once(self):
+        for bad in ("   - **More:** other lines; type `x` to see all.\n",
+                    "   - **More:** 12 other lines.\n"):
+            with self.subTest(bad=bad):
+                text = with_compass("X. **Compass:**\n   - **V1.** A view.\n" + bad)
+                self.assertTrue(any("needs the count" in v for v in self.messages(text)), self.messages(text))
+        not_last = with_compass("X. **Compass:**\n   - **More:** 3 other lines; type `x` to see all.\n   - **V1.** A view.\n")
+        self.assertTrue(any("one More item, and it is the last" in v for v in self.messages(not_last)))
+        twice = with_compass("X. **Compass:**\n" + 2 * "   - **More:** 3 other lines; type `x` to see all.\n")
+        self.assertTrue(any("one More item" in v for v in self.messages(twice)))
+
+    def test_x_items_label_and_indentation_are_checked(self):
+        for text, expected in (
+                (with_compass(COMPASS_X.replace("**V1.**", "**V1**")), "Section X item must be"),
+                (with_compass(COMPASS_X.replace("   - **V1.**", "   - V1.")), "Section X item must be"),
+                (with_compass(COMPASS_X.replace("   - **V1.**", "    - **V1.**")), "indented exactly 3 spaces"),
+                (with_compass(COMPASS_X.replace("**Compass:**", "**Compas:**")), "label must be 'Compass'"),
+                (with_compass(COMPASS_X.replace("**Compass:**", "**Compass:** none")), "label only"),
+                (with_compass(COMPASS_X.replace("**V1.**", "**V\u0661.**")), "Section X item must be")):
+            with self.subTest(expected=expected):
+                self.assertTrue(any(expected in v for v in self.messages(text)), self.messages(text))
+
+    def test_a_deviation_names_the_line_and_needs_its_choice_in_quests(self):
+        deviation = "   - **X!** A1: I built my own queue, the SDK has a retry option; choose in Quests.\n"
+        good = with_compass("X. **Compass:**\n   - **A1.** Use each vendor's own feature.\n" + deviation +
+                            "   - **More:** 3 other lines; type `x` to see all.\n")
+        self.assertTrue(check(good)["ok"], check(good))
+        unnamed = with_compass("X. **Compass:**\n   - **X!** I built my own queue; choose in Quests.\n")
+        self.assertTrue(any("X! item names the line" in v for v in self.messages(unnamed)))
+        no_quest = good.replace("5. **Quests:**\n   - **Q1.** Approve: deploy to production?\n     - `<a>` After CI passes.\n     - (b) Now.\n",
+                                "5. **Quests:**\n")
+        self.assertNotEqual(no_quest, good)
+        self.assertTrue(any("needs its choice in section 5" in v for v in self.messages(no_quest)))
+
+    def test_x_works_in_the_admin_zone_alone_and_when_the_conclusion_comes_first(self):
+        admin_only = with_compass(base=FULL[FULL.index("**Admin-Zone**"):])
+        self.assertTrue(check(admin_only)["ok"], check(admin_only))
+        body, rest = with_compass().split("\n\n**Conclusion:**", 1)
+        line, sections = rest.split("\n\n", 1)
+        first = "**Conclusion:**" + line + "\n\n" + body + "\n\n" + sections
+        self.assertTrue(check(first)["ok"], check(first))
+        self.assertTrue(any("No valid Conclusion" in v for v in self.messages(body + "\n\n" + COMPASS_X)))
+
+    def test_the_x_reply_is_the_compass_alone_with_proposed_lines_marked(self):
+        report = check(COMPASS_ALONE)
+        self.assertTrue(report["ok"], report)
+        for text, expected in (
+                (COMPASS_ALONE.replace("**A Architecture**", "**A Architektur**"), "Group label must be **A Architecture**"),
+                (COMPASS_ALONE.replace("**V Vision**\n- **V1.**", "**V Vision**\n- **A1.**"), "is under group V"),
+                (COMPASS_ALONE.replace(" (proposed, not enforced)", ""), "must end with (proposed, not enforced)"),
+                (COMPASS_ALONE.replace("one.\n\n**Z**", "one. (proposed, not enforced)\n\n**Z**"), "list it under **Proposed**"),
+                (COMPASS_ALONE.replace("\n\n**Proposed**", "\n**Proposed**"), "blank line before **Proposed**"),
+                (COMPASS_ALONE + "\n**A Architecture**\n", "comes after every group"),
+                (COMPASS_ALONE + "\nThat is all.\n", "holds only group labels"),
+                (COMPASS_ALONE.replace("**V Vision**\n", ""), "needs a group label first"),
+                (COMPASS_ALONE.replace("**Z**", "**Group Z**"), "Group label is one letter")):
+            with self.subTest(expected=expected):
+                self.assertNotEqual(text, COMPASS_ALONE)
+                self.assertTrue(any(expected in v for v in self.messages(text)), self.messages(text))
+        with_zone = COMPASS_ALONE + "\n**Admin-Zone**\n"
+        self.assertFalse(check(with_zone)["ok"])
+
+    def test_the_shipped_compass_examples_pass(self):
+        for name in ("compass-en.md", "compass-x-en.md"):
+            with self.subTest(name=name):
+                report = check((ROOT / "examples" / name).read_text())
+                self.assertTrue(report["ok"], report)
+
+
 class StyleTests(unittest.TestCase):
     def test_emoji_and_square_brackets_fail_but_code_spans_may_hold_anything(self):
         self.assertFalse(check(FULL.replace("**Login fix:** merged.", "**Login fix:** merged ✅"))["ok"])
