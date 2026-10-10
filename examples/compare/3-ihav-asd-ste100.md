@@ -29,3 +29,4 @@
    - **R1.** `jsonwebtoken` 8.5.1 is older than the 9.0.0 security release.
      - `<a>` update it after the deploy | (b) skip | (c) later
 7. **Ideas:**
+8. **DeepQuests:**

@@ -85,13 +85,13 @@ class HookTests(unittest.TestCase):
         out = self.run_hook({"hook_event_name": "UserPromptSubmit", "session_id": "a", "prompt": "fix the bug"})
         self.assertEqual(out.count("\n"), 1)
         self.assertLess(len(out.encode()), REMINDER_LIMIT)
-        self.assertIn("0. **Goals:** (`**L1.** [~N%] [bar] | aim`, then plain G and B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
-                      "5. **Quests:**, 6. **Risks:**, 7. **Ideas:**", out)
-        for zone in ("**Agents-Zone** (first `- guess => the user's why and final aim`, then step lines: `time` why => what)",
-                     "No emoji or square brackets except L progress.", "**Result-Zone**", "**Admin-Zone**"):
+        self.assertIn("0. **Goals:** (`**L1.** [~N%] [bar] | aim`, plain G and B), 1. **Done:**, 2. **Doing:**, 3. **Todos:**, 4. **Pending:**, "
+                      "5. **Quests:**, 6. **Risks:**, 7. **Ideas:**, 8. **DeepQuests:**", out)
+        for zone in ("**Agents-Zone** (first `- guess => the user's why and final aim`, then `time` why => what)",
+                     "No emoji/brackets except L progress.", "**Result-Zone**", "**Admin-Zone**"):
             self.assertIn(zone, out)
         self.assertRegex(out, r" Now (1[0-2]|[1-9]):[0-5][0-9] (AM|PM)\.\n$")
-        self.assertIn("items are sub-items with a bold key", out)
+        self.assertIn("bold-key sub-items", out)
         self.assertTrue(out.isascii())
 
     def test_post_tool_batch_gives_the_local_time_unless_the_mode_is_off(self):

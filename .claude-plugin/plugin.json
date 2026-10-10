@@ -1,7 +1,7 @@
 {
   "name": "ihav-asd-ste100",
-  "version": "0.20.0",
-  "description": "Short, plain, predictable replies in any language: key-first bullets, a one-sentence Conclusion, then eight fixed status sections. Rules adapted from ASD-STE100 principles.",
+  "version": "0.21.0",
+  "description": "Short, plain, predictable replies in any language: key-first bullets, a one-sentence Conclusion, then nine fixed status sections. Rules adapted from ASD-STE100 principles.",
   "author": {
     "name": "hiendang7613"
   },

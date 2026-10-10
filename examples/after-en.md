@@ -31,3 +31,6 @@
 7. **Ideas:**
    - **I1.** Add a test that sends `Authorization: Bearer <token>`, so this bug cannot come back.
      - `<a>` plan it | (b) skip | (c) later
+8. **DeepQuests:**
+   - **D1.** guess ~70%: you want one sign-in flow for every client long term | ask: keep that direction?
+     - `<a>` One shared flow | (b) client-specific flows | (c) later

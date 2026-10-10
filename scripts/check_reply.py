@@ -11,6 +11,7 @@ The check covers what can be checked mechanically: the three zone labels and ste
 ASCII structure, exact English labels,
 section order and indentation, bold-key sub-items, option markers, duplicate conclusions, emoji and square brackets,
 sentence length, openers and closers.
+Section 8 DeepQuests follows Ideas, with at most three bold D items; missing section 8 only warns in this release.
 An optional first section `X. **Compass:**` (up to 5 compass lines, each optionally opening with the confidence
 [~95%], a last More item, X! deviation items) and the Compass-alone reply to "x" are checked too; a project without a
 Compass file never has them.
@@ -22,6 +23,8 @@ With labels it has the three zones once each, in order, and: no clock in the Age
 "- guess => ..." of up to 12 words, at most 5 lines in a zone; a Result-Zone that is not empty; an Admin-Zone that opens
 with "**Conclusion:**" (a status word first is fine) of one sentence and up to 35 words, then only the sections
 "3. **Todos:**", "4. **Pending:**" and "5. **Quests:**", each only when it has items; and each question "Q1." with one <a>.
+The full leader form keeps sections 0 to 7, even when empty, with optional X first and optional 8 DeepQuests last.
+DeepQuests is allowed only in that full form; D items never count as questions to the admin.
 
 Any language: body text can use any language. Structural numbers, labels and colons stay in ASCII.
 Length is counted in words for scripts with spaces and in characters (converted to word equivalents)
@@ -32,18 +35,19 @@ import json
 import re
 import sys
 
-SECTIONS = {0: "Goals", 1: "Done", 2: "Doing", 3: "Todos", 4: "Pending", 5: "Quests", 6: "Risks", 7: "Ideas"}
-GOALS, PENDING, QUESTIONS, RISKS, IDEAS = 0, 4, 5, 6, 7
+SECTIONS = {0: "Goals", 1: "Done", 2: "Doing", 3: "Todos", 4: "Pending", 5: "Quests", 6: "Risks", 7: "Ideas", 8: "DeepQuests"}
+GOALS, PENDING, QUESTIONS, RISKS, IDEAS, DEEPQUESTS = 0, 4, 5, 6, 7, 8
+MAX_DEEPQUESTS = 3
 COMPASS = -1  # the optional section "X. **Compass:**", first in the list, above Goals
 COMPASS_GROUPS = {"V": "Vision", "A": "Architecture", "W": "Work habits", "C": "Code", "S": "Style"}
 MAX_COMPASS_LINES = 5
 COMPASS_ID = r"[A-Za-z][0-9]+"
 PROPOSED_MARK = "(proposed, not enforced)"
 # Numbered lists: Goals items are **L1.** (long-term aim), **G1.** (current goal) and **B1.** (deferred work);
-# decision lists use **Q1.**, **R1.** and **I1.**.
-ID_KEYS = {GOALS: "LGB", QUESTIONS: "Q", RISKS: "R", IDEAS: "I"}
-MUST_CHOOSE = (RISKS, IDEAS)  # every risk and idea offers a choice
-ALWAYS_SHOWN = tuple(SECTIONS)  # every section is shown; an empty one shows only its label
+# decision lists use **Q1.**, **R1.**, **I1.** and **D1.**.
+ID_KEYS = {GOALS: "LGB", QUESTIONS: "Q", RISKS: "R", IDEAS: "I", DEEPQUESTS: "D"}
+MUST_CHOOSE = (RISKS, IDEAS, DEEPQUESTS)
+ALWAYS_SHOWN = tuple(n for n in SECTIONS if n != DEEPQUESTS)  # missing 8 warns during this release
 BAR_WIDTH = 10
 # An L line opens with the agent's estimate and a bar, one # per 10 percent: **L1.** [~80%] [########--] | aim
 L_PROGRESS = re.compile(r"^\[~([0-9]{1,3})%%\] \[([#-]{%d})\] \| \S" % BAR_WIDTH)
@@ -74,7 +78,7 @@ FULLWIDTH_MARKER_LINE = re.compile(r"(?m)^\s*(?:[-*]\s+)?\*\*[^*\n]{1,40}：\*\*
 SUB_ITEM = re.compile(r"^\s{2,}[-*]\s+(.*)$")
 BOLD_KEY = re.compile(r"^\*\*[^*:\n]{1,40}:\*\*(\s|$)")
 OPTION_ITEM = re.compile(r"^(?:`<a>`|\([a-z]\))(?:\s|$)")
-ID_CANDIDATE = re.compile(r"\*\*[QRI]\d+\.\*\*")
+ID_CANDIDATE = re.compile(r"\*\*[QRID]\d+\.\*\*")
 RECOMMENDED = "`<a>`"
 EVIDENCE_ODD = re.compile(r"\((?:checked|verified|unverified|unchecked|not verified)\)", re.I)
 ZONES = ("Agents-Zone", "Result-Zone", "Admin-Zone")
@@ -243,7 +247,7 @@ def indentation_problems(number, sub_items):
 
 
 def numbering_problems(number, sub_items):
-    """Q, R and I items restart at 1 in every reply, so a short answer such as Q1.a always means the latest reply.
+    """Q, R, I and D items restart at 1 in every reply, so Q1.a or d1.a means the latest reply.
     L, G and B keep stable IDs across replies and are not checked here."""
     letter = ID_KEYS[number]
     found = [int(match.group(1)) for match in (re.match(r"^\*\*%s([0-9]+)\.\*\*" % letter, SUB_ITEM.match(line).group(1))
@@ -252,6 +256,34 @@ def numbering_problems(number, sub_items):
         return ["Section %d numbers %s; number %s items from %s1 in every reply, in order."
                 % (number, ", ".join("%s%d" % (letter, n) for n in found), letter, letter)]
     return []
+
+
+def deepquest_problems(sub_items):
+    """Check local shape only; intent, consent and repetition across replies need human review."""
+    items = [SUB_ITEM.match(line).group(1) for line in sub_items if len(line) - len(line.lstrip()) <= 3]
+    problems = []
+    if len(items) > MAX_DEEPQUESTS:
+        problems.append("Section 8 DeepQuests has at most %d D items; found %d." % (MAX_DEEPQUESTS, len(items)))
+    choice_counts = []
+    for line in sub_items:
+        item = SUB_ITEM.match(line).group(1)
+        if len(line) - len(line.lstrip()) <= 3:
+            choice_counts.append(0)
+        else:
+            if choice_counts:
+                choice_counts[-1] += 1
+            if not OPTION_ITEM.match(item):
+                problems.append("DeepQuests items start with a bold **D1.** key at 3 spaces; choices go below at 5.")
+    if any(count != 1 for count in choice_counts):
+        problems.append("Each DeepQuest has one deeper choice line.")
+    for item in items:
+        plain = re.sub(r"`[^`]*`", "", item)
+        percent = re.search(r"~([0-9]{1,3})%", plain)
+        if not percent or int(percent.group(1)) > 100 or re.search(r"[\[\]]", plain):
+            problems.append("DeepQuest opens with guess ~70%% (0 to 100, no brackets): %s..." % item[:30])
+        if " | " not in plain:
+            problems.append("DeepQuest separates its guess and one question with ' | ask: ' (in the user's language).")
+    return problems
 
 
 def goal_problems(sub_items):
@@ -364,12 +396,12 @@ def mask_code(text):
 
 def zone_problems(text):
     """The full format has three labelled zones: Agents-Zone (one line per step: `4:43 PM` why => what),
-    Result-Zone (the key-first body) and Admin-Zone (the Conclusion and the eight sections).
+    Result-Zone (the key-first body) and Admin-Zone (the Conclusion and the nine sections).
     An "adminzone" reply has the Admin-Zone alone."""
     lines = mask_code(text).splitlines()
     zones = [(index, ZONE_LINE.match(line).group(1)) for index, line in enumerate(lines) if ZONE_LINE.match(line)]
     if [name for _, name in zones] == ["Admin-Zone"]:
-        # "adminzone" asks for the Admin-Zone alone: its label, the Conclusion line and the eight sections.
+        # "adminzone" asks for the Admin-Zone alone, including section 8.
         if any(line.strip() for line in lines[:zones[0][0]]):
             return ["An Admin-Zone-only reply starts with **Admin-Zone**; a full reply has all three zones."]
         agents = result = admin = zones[0][0]
@@ -396,7 +428,7 @@ def zone_problems(text):
     if admin + 1 < len(lines) and lines[admin + 1].strip():
         problems.append("Put a blank line after **Admin-Zone**.")
     if not after or not (CONCLUSION_LINE.match(after[0].strip()) or SECTION_LINE.match(after[0])):
-        problems.append("**Admin-Zone** must be followed by the Conclusion line, then the eight sections.")
+        problems.append("**Admin-Zone** must be followed by the Conclusion line, then the nine sections.")
     return problems
 
 
@@ -504,7 +536,7 @@ def compass_alone_problems(text):
 # --- Profile room: a post of Agent Room --------------------------------------------------------------------------------
 ROOM_LABEL = re.compile(r"\*\*\s*(Agents|Result|Admin)\s*-\s*Zone\s*:?\s*\*\*", re.I)
 ROOM_ANY_ZONE = re.compile(r"\*\*[^*]{1,30}-Zone\*\*", re.I)
-ROOM_SECTION = re.compile(r"(?:\b([0-9]|X)\.\s*)?\*\*\s*(Goals|Done|Doing|Todos|Pending|Quests|Risks|Ideas|Compass)\s*:?\s*\*\*:?", re.I)
+ROOM_SECTION = re.compile(r"(?:\b([0-9]|X)\.\s*)?\*\*\s*(Goals|Done|Doing|Todos|Pending|Quests|Risks|Ideas|DeepQuests|Compass)\s*:?\s*\*\*:?", re.I)
 ROOM_KEPT = {"Todos": 3, "Pending": 4, "Quests": 5}
 ROOM_CONCLUSION = re.compile(r"\*\*\s*Conclusion\s*:?\s*\*\*:?\s*", re.I)
 ROOM_STATUS = re.compile(r"^(done|not done|unsure|waiting on [^—–:]+?)\s*(?:[—–:]|\s-\s)\s*", re.I)
@@ -539,7 +571,8 @@ def room_check(text):
 
     flat = re.sub(r"\s+", " ", re.sub(r"`[^`]*`", hide, mask_code(text.replace("`<a>`", "<a>")))).strip()
     violations, warnings = [], []
-    stats = {"words": units(flat), "zones": [], "agents_lines": 0, "result_lines": 0, "conclusion_words": 0, "sections": []}
+    stats = {"words": units(flat), "zones": [], "agents_lines": 0, "result_lines": 0, "conclusion_words": 0, "sections": [],
+             "questions": 0, "deepquests": 0}
     labels = list(ROOM_LABEL.finditer(flat))
     unknown = sorted({m.group(0) for m in ROOM_ANY_ZONE.finditer(flat) if not ROOM_LABEL.fullmatch(m.group(0))})
     warnings.extend("%s is not a zone label; the room shows it as plain text." % name for name in unknown)
@@ -547,6 +580,8 @@ def room_check(text):
         violations.append("The post contains emoji; write status in words.")
     warnings.extend(evidence_warnings(text))
     if not labels:  # a one-fact post or an older report: the room shows it whole as the Result
+        if any(section.group(2).casefold() == "deepquests" for section in ROOM_SECTION.finditer(flat)):
+            violations.append("DeepQuests is allowed only in the full leader form with three zones and sections 0-7.")
         if stats["words"] > SMALL_ANSWER_WORDS:
             warnings.append("No zone labels in a post of more than %d words; a post that took steps has the three zones." % SMALL_ANSWER_WORDS)
         return {"ok": not violations, "violations": violations, "warnings": warnings, "stats": stats}
@@ -603,11 +638,14 @@ def room_check(text):
     if sentence_count(sentence) > 1:
         violations.append("The Conclusion has %d sentences; write one." % sentence_count(sentence))
 
+    labels = [section.group(2).casefold() for section in sections if section.group(2).casefold() != "compass"]
+    full = labels in ([SECTIONS[n].casefold() for n in range(8)], [SECTIONS[n].casefold() for n in range(9)])
     compass, quests = [], []
     for index, section in enumerate(sections):
-        number, label = section.group(1), section.group(2).title()
+        number = section.group(1)
+        label = next(label for label in (*SECTIONS.values(), "Compass") if label.casefold() == section.group(2).casefold())
         body = admin[section.end():sections[index + 1].start() if index + 1 < len(sections) else len(admin)].strip()
-        stats["sections"].append(COMPASS if label == "Compass" else ROOM_KEPT.get(label))
+        stats["sections"].append(COMPASS if label == "Compass" else next(n for n in SECTIONS if SECTIONS[n] == label))
         if label == "Compass":
             if number != "X":
                 violations.append("Write the section as 'X. **Compass:**'.")
@@ -617,8 +655,33 @@ def room_check(text):
             # Restore code only after finding boundaries: quoted section labels stay quoted.
             compass.append((COMPASS, label, restore(lead), ["   - " + restore(item) for item in items]))
             continue
+        if full:
+            n = next(n for n in SECTIONS if SECTIONS[n] == label)
+            if number != str(n):
+                violations.append("Write the section as '%d. **%s:**'." % (n, label))
+            lead, items = room_bullets(body)
+            if lead:
+                violations.append("Section %d holds '- ' items below its label." % n)
+            restored = [restore(item).replace("<a>", RECOMMENDED) for item in items]
+            subs = [("     - " if OPTION_ITEM.match(item) else "   - ") + item for item in restored]
+            violations.extend(item_problems(n, subs))
+            if n in (QUESTIONS, RISKS, IDEAS, DEEPQUESTS):
+                violations.extend(question_problems(n, subs))
+                violations.extend(numbering_problems(n, subs))
+            if n == GOALS:
+                violations.extend(goal_problems(subs))
+            if n == QUESTIONS:
+                if items:
+                    quests.append(body)
+                stats["questions"] += sum(bool(re.match(r"^\*\*Q[0-9]+\.\*\*", item)) for item in restored)
+            if n == DEEPQUESTS:
+                violations.extend(deepquest_problems(subs))
+                stats["deepquests"] += sum(bool(re.match(r"^\*\*D[0-9]+\.\*\*", item)) for item in restored)
+            warnings.extend(pending_warnings([(n, label, "", subs)]))
+            continue
         if label not in ROOM_KEPT:
-            violations.append("The room keeps only 3. **Todos:**, 4. **Pending:** and 5. **Quests:**; found %s." % label)
+            violations.append("The room keeps only 3. **Todos:**, 4. **Pending:** and 5. **Quests:** unless the full 0-7 leader form is used; "
+                              "DeepQuests is optional only in that full form; found %s." % label)
             continue
         if number != str(ROOM_KEPT[label]):
             violations.append("Write the section as '%d. **%s:**'." % (ROOM_KEPT[label], label))
@@ -627,6 +690,7 @@ def room_check(text):
         elif label == "Quests":
             quests.append(body)
             questions = [q.strip() for q in ROOM_QUESTION.split(body) if q.strip()]
+            stats["questions"] += len(questions)
             if [int(re.match(r"Q([0-9]+)", q).group(1)) for q in questions if re.match(r"Q[0-9]+\.", q)] != list(range(1, len(questions) + 1)):
                 violations.append("Number the questions Q1., Q2., ... in order: %s" % show(body))
             for question in questions:
@@ -679,8 +743,10 @@ def check(text, profile="full"):
         missing = [n for n in ALWAYS_SHOWN if n not in numbers]
         if missing:
             violations.append("Sections %s must be shown; an empty one shows only its label." % ", ".join(str(n) for n in missing))
+        if DEEPQUESTS not in numbers:
+            warnings.append("Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.21.0).")
         if numbers != sorted(set(numbers)) or any(n not in SECTIONS for n in numbers):
-            violations.append("Sections must be numbered 0 to 7, in order, each once; found %s." % numbers)
+            violations.append("Sections must be numbered 0 to 8, in order, each once; found %s." % numbers)
         violations.extend(layout)
         quests = [line for number, _, _, subs in sections if number == QUESTIONS for line in subs]
         violations.extend(compass_problems(order, compass, quests))
@@ -692,9 +758,11 @@ def check(text, profile="full"):
                                   "sub-item that starts with a bold key." % number)
             violations.extend(item_problems(number, subs))
             violations.extend(indentation_problems(number, subs))
-            if number in (QUESTIONS, RISKS, IDEAS):
+            if number in (QUESTIONS, RISKS, IDEAS, DEEPQUESTS):
                 violations.extend(question_problems(number, subs))
                 violations.extend(numbering_problems(number, subs))
+            if number == DEEPQUESTS:
+                violations.extend(deepquest_problems(subs))
             if number == GOALS:
                 violations.extend(goal_problems(subs))
         warnings.extend(duplicate_items(sections))
@@ -712,7 +780,7 @@ def check(text, profile="full"):
     if FULLWIDTH_MARKER_LINE.search(strip_code(text)):
         violations.append("Bold structural labels and keys must use an ASCII colon.")
     if any(not match.group()[2:-2].isascii() for match in ID_CANDIDATE.finditer(outside_code)):
-        violations.append("Q, R and I IDs must use ASCII digits.")
+        violations.append("Q, R, I and D IDs must use ASCII digits.")
     if len(re.findall(r"\*\*Conclusion:\*\*", outside_code)) > 1:
         violations.append("A reply must not contain more than one Conclusion marker.")
     if EMOJI.search(outside_code):
@@ -749,6 +817,10 @@ def check(text, profile="full"):
             "body_words": body_words,
             "conclusion_words": units(conclusion) if conclusion else 0,
             "sections": [number for number, _, _, _ in sections],
+            "questions": sum(bool(re.match(r"^   [-*] \*\*Q[0-9]+\.\*\*", sub))
+                             for n, _, _, subs in sections if n == QUESTIONS for sub in subs),
+            "deepquests": sum(bool(re.match(r"^   [-*] \*\*D[0-9]+\.\*\*", sub))
+                              for n, _, _, subs in sections if n == DEEPQUESTS for sub in subs),
             "compass_lines": sum(bool(re.match(r"^\s+[-*]\s+\*\*%s\.\*\*" % COMPASS_ID, sub))
                                  for _, _, _, subs in compass for sub in subs),
             "longest_sentence": max((units(s) for s in body_sentences), default=0),

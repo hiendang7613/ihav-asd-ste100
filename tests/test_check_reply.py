@@ -41,6 +41,7 @@ FULL = """**Agents-Zone**
 7. **Ideas:**
    - **I1.** Add a test for the `Authorization` header.
      - `<a>` plan it | (b) skip | (c) later
+8. **DeepQuests:**
 """
 
 
@@ -48,7 +49,7 @@ class ShapeTests(unittest.TestCase):
     def test_full_shape_passes(self):
         report = check(FULL)
         self.assertTrue(report["ok"], report)
-        self.assertEqual(report["stats"]["sections"], list(range(8)))
+        self.assertEqual(report["stats"]["sections"], list(range(9)))
 
     def test_shipped_examples_pass_and_the_old_style_fails(self):
         for name in ("after-en.md", "after-vi.md", "after-zh.md", "after-ja.md", "after-es.md", "compare/3-ihav-asd-ste100.md"):
@@ -58,11 +59,11 @@ class ShapeTests(unittest.TestCase):
         self.assertFalse(before["ok"])
         self.assertTrue(any("No conclusion part" in v for v in before["violations"]))
 
-    def test_all_eight_sections_are_always_shown_and_empty_ones_show_only_the_label(self):
+    def test_all_nine_sections_are_shown_and_empty_ones_show_only_the_label(self):
         alone = ("**Agents-Zone**\n\n**Result-Zone**\n- **Rename:** done.\n\n**Admin-Zone**\n\n"
                  "**Conclusion:** The file is renamed.\n")
         self.assertTrue(any("must be shown" in v for v in check(alone)["violations"]))
-        labels = ["Goals", "Done", "Doing", "Todos", "Pending", "Quests", "Risks", "Ideas"]
+        labels = ["Goals", "Done", "Doing", "Todos", "Pending", "Quests", "Risks", "Ideas", "DeepQuests"]
         minimal = alone + "\n" + "\n".join("%d. **%s:**" % (n, label) for n, label in enumerate(labels)) + "\n"
         self.assertTrue(check(minimal)["ok"], check(minimal))
         no_pending = FULL.replace("2. **Doing:**\n   - **CI:** reruns the full suite.\n", "")
@@ -121,7 +122,7 @@ class ShapeTests(unittest.TestCase):
         first = "**Conclusion:**" + line + "\n\n" + body + "\n\n" + sections
         report = check(first)
         self.assertTrue(report["ok"], report)
-        self.assertEqual(report["stats"]["sections"], list(range(8)))
+        self.assertEqual(report["stats"]["sections"], list(range(9)))
         self.assertEqual(report["stats"]["body_words"], check(FULL)["stats"]["body_words"])
         glued = first.replace("**Admin-Zone**\n\n0.", "**Admin-Zone**\n0.")
         self.assertNotEqual(glued, first)
@@ -298,7 +299,7 @@ class CompassTests(unittest.TestCase):
         self.assertEqual(check(FULL)["stats"]["compass_lines"], 0)
         report = check(with_compass())
         self.assertTrue(report["ok"], report)
-        self.assertEqual(report["stats"]["sections"], list(range(8)))
+        self.assertEqual(report["stats"]["sections"], list(range(9)))
         self.assertEqual(report["stats"]["compass_lines"], 2)
 
     def test_x_may_show_only_its_label_or_five_lines_or_none_of_the_extras(self):

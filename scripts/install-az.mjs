@@ -19,7 +19,8 @@ ${MARKER}
 
 az
 
-Reply with the Admin-Zone alone: the bold Admin-Zone label, the Conclusion line and all eight sections, in the
+Reply with the Admin-Zone alone: the bold Admin-Zone label, the Conclusion line and all nine sections (0-8, including
+8. **DeepQuests:**), in the
 ihav-asd-ste100 shape, for the current state of the work. Add no other zone.
 `;
 

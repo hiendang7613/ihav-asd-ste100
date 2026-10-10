@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="840" viewBox="0 0 1200 840" role="img" aria-labelledby="title desc">
 <title id="title">Before and after ihav-asd-ste100</title>
-<desc id="desc">Left: a default agent reply as one long paragraph. Right: the same facts in three labelled zones: the agent's timed steps, key-first bullets, then a one-sentence Conclusion and eight numbered sections whose items start with a bold key.</desc>
+<desc id="desc">Left: a default agent reply as one long paragraph. Right: the same facts in three labelled zones: the agent's timed steps, key-first bullets, then a one-sentence Conclusion and nine numbered sections whose items start with a bold key.</desc>
 <style>
 .m { font: 15.5px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
 .t { font: 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -55,6 +55,7 @@
 <text x="22" y="634" class="m" xml:space="preserve"><tspan fill="#9CA3AF">   - </tspan><tspan fill="#E5E7EB" font-weight="700">R1.</tspan><tspan fill="#E5E7EB"> jsonwebtoken 8.5.1 is old.</tspan></text>
 <text x="22" y="660" class="m" xml:space="preserve"><tspan fill="#9CA3AF">     - </tspan><tspan fill="#7DD3FC">&lt;a&gt;</tspan><tspan fill="#E5E7EB"> update | (b) skip | (c) later</tspan></text>
 <text x="22" y="686" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">7. Ideas:</tspan></text>
+<text x="22" y="708" class="m" xml:space="preserve"><tspan fill="#A5B4FC" font-weight="700">8. DeepQuests:</tspan></text>
 </g>
 <text x="600" y="826" text-anchor="middle" class="t" fill="#4B5563">Illustration: a hand-written sample of the reply shape, not model output.</text>
 </svg>

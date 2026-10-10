@@ -31,3 +31,6 @@
 7. **Ideas:**
    - **I1.** Añadir una prueba que envíe `Authorization: Bearer <token>`, para que este error no vuelva.
      - `<a>` planificarlo | (b) omitir | (c) más tarde
+8. **DeepQuests:**
+   - **D1.** supongo ~70%: quieres un flujo de acceso común a largo plazo | pregunto: ¿seguimos esa dirección?
+     - `<a>` Un flujo común | (b) uno por cliente | (c) más tarde

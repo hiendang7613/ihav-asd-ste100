@@ -29,6 +29,8 @@ class InstallAzTests(unittest.TestCase):
         self.assertIn("name: az", text)
         self.assertIn("owned-by: ihav-asd-ste100", text)
         self.assertIn("Admin-Zone alone", text)
+        self.assertIn("all nine sections (0-8", text)
+        self.assertIn("8. **DeepQuests:**", text)
         self.assertEqual(self.run_script().returncode, 0)
         self.assertEqual(self.run_script("--remove").returncode, 0)
         self.assertFalse(self.skill.parent.exists())

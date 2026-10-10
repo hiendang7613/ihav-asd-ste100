@@ -27,10 +27,10 @@ const ON_EXACT = new Set(["ste mode", "start ste mode", "ste mode on"]);
 const OFF_ANYWHERE = /\bstop ste mode\b/;
 const ON_ANYWHERE = /\b(?:start ste mode|ste mode on)\b/;
 export const REMINDER =
-  "[ihav-asd-ste100] Reply shape: **Agents-Zone** (first `- guess => the user's why and final aim`, then step lines: `time` why => what), **Result-Zone** (key-first " +
-  "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Goals:** (`**L1.** [~N%] [bar] | aim`, then plain G and B), 1. **Done:**, " +
-  "2. **Doing:**, 3. **Todos:**, 4. **Pending:**, 5. **Quests:**, 6. **Risks:**, 7. **Ideas:**; items are sub-items with a bold key; " +
-  '`<a>` = recommended. No emoji or square brackets except L progress. "stop ste mode" turns this off.';
+  "[ihav-asd-ste100] Reply shape: **Agents-Zone** (first `- guess => the user's why and final aim`, then `time` why => what), **Result-Zone** (key-first " +
+  "bullets), **Admin-Zone**: **Conclusion:** one sentence, blank line, 0. **Goals:** (`**L1.** [~N%] [bar] | aim`, plain G and B), 1. **Done:**, " +
+  "2. **Doing:**, 3. **Todos:**, 4. **Pending:**, 5. **Quests:**, 6. **Risks:**, 7. **Ideas:**, 8. **DeepQuests:**; bold-key sub-items; " +
+  '`<a>` = recommended. No emoji/brackets except L progress. "stop ste mode" turns this off.';
 
 const COMPASS_PATH = path.join(".ihav_space", "ihav-asd-ste100", "compass.md");
 const COMPASS_READ_MAX = 128 * 1024;  // a larger file is read only this far

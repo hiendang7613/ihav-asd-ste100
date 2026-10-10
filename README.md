@@ -12,13 +12,13 @@
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.20.0" src="https://img.shields.io/badge/version-0.20.0-4F46E5">
+  <img alt="Version 0.21.0" src="https://img.shields.io/badge/version-0.21.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
 
 <p align="center">
-  <img src="./assets/hero.svg" alt="Left: a default agent reply as one long paragraph. Right: the same facts as key-first bullets, a one-sentence conclusion and numbered sections Goals, Done, Doing, Todos, Pending, Quests, Risks and Ideas." width="900" />
+  <img src="./assets/hero.svg" alt="Left: a default agent reply as one long paragraph. Right: the same facts as key-first bullets, a one-sentence conclusion and numbered sections Goals, Done, Doing, Todos, Pending, Quests, Risks, Ideas and DeepQuests." width="900" />
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 Coding agents bury the one thing you need: what failed, what needs your OK, what is still running.
 This plugin gives every reply the same shape. Facts come first, one per line.
-A one-sentence conclusion and eight numbered sections close the reply. Your eye learns where to look.
+A one-sentence conclusion and nine numbered sections close the reply. Your eye learns where to look.
 
 <a name="install"></a>
 
@@ -101,12 +101,15 @@ Every reply that has more than one fact has three zones, each under a bold label
 7. **Ideas:**
    - **I1.** Add a test for the `Authorization` header.
      - `<a>` plan it | (b) skip | (c) later
+8. **DeepQuests:**
+   - **D1.** guess ~70%: you want one sign-in flow for every client long term | ask: keep that direction?
+     - `<a>` One shared flow | (b) client-specific flows | (c) later
 
 | Part | What it holds | Who acts |
 |---|---|---|
 | **Agents-Zone** | First line `- guess => ...`: the agent's guess of your why and final aim, in up to 12 words, so you can correct it early. Then every step the agent took this turn, in order: the time, why, `=>`, what it did. The time comes from a real clock (a hook in Claude Code), never a guess | The agent, already |
 | **Result-Zone** | The answer or blocker first, then the facts and evidence as key-first bullets | The agent, already |
-| **Admin-Zone** | The Conclusion line and the eight sections below | You decide from here |
+| **Admin-Zone** | The Conclusion line and the nine sections below | You decide from here |
 | **Conclusion** | The result in one sentence. Bad news first: failure, skip, blocker, unverified work. | Nobody: it is the verdict |
 | `X. **Compass:**` | Only in a project with a Compass file (see below), first in the list: the admin's core views that this reply touches (at most 5), a `**X!**` line when the work conflicts with one | You set it; the agent keeps to it |
 | `0. **Goals:**` | L lines: user-set long-term aims with the agent's estimated progress; G lines: current goals; B lines: deferred or optional work | You set L; the agent tracks G and B |
@@ -114,16 +117,18 @@ Every reply that has more than one fact has three zones, each under a bold label
 | `2. **Doing:**` | Work running now: builds, jobs, other agents | The agent or a tool, now |
 | `3. **Todos:**` | Work in the current task the agent does next, in order | The agent, next |
 | `4. **Pending:**` | Work waiting for someone or something else | A third party |
-| `5. **Quests:**` | Everything that needs you: choices, and approvals that start with "Approve:" | You |
+| `5. **Quests:**` | Only decisions needed now to continue: choices, and approvals that start with "Approve:" | You |
 | `6. **Risks:**` | Risks you should know, each **R1.** with a choice: fix, skip or later. Empty means the agent checked and found none | You |
 | `7. **Ideas:**` | Ideas the agent proposes, each **I1.** with a choice: plan, skip or later | You |
+| `8. **DeepQuests:**` | Up to three long-term intent guesses, each **D1.** with one question; optional answers never block work | You, optionally |
 
-- **All eight sections, always, as one list from 0 to 7.** An empty one shows only its label, so you always see whether anything runs, waits or comes next. One blank line separates the list from the Conclusion line; none separates the sections. Each zone label sits on its own line after a blank line. You can answer "Q1 a, R1 c, I1 b" in one line.
+- **All nine sections, always, as one list from 0 to 8.** An empty one shows only its label, so you always see whether anything runs, waits or comes next. One blank line separates the list from the Conclusion line; none separates the sections. Each zone label sits on its own line after a blank line. You can answer "Q1.a, R1.c, I1.b, d1.a" in one line.
 - **Goals:** list L, G, then B lines. Only the user sets a long-term aim. Each L line opens with the agent's estimate and a ten-character ASCII bar, one `#` per 10 percent, then a pipe and the aim: `[~70%] [#######---] | Every client can log in.` These and the Compass `[~N%]` mark are the only square brackets allowed. G lines (current goals) and B lines (deferred work) are plain text.
 - **The recommended option** is written as `<a>` in code; the other options are (b), (c). You answer with one letter.
 - **Small answers stay small:** one fact, one sentence. Code-only, JSON-only and one-command requests get exactly that.
 - **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to a B line in Goals.
 - **Items:** each one is a sub-item under its label that starts with a bold key, such as `   - **Login fix:** merged.` The label line itself stays bare.
+- **DeepQuests:** `guess ~70%: <long-term intent> | ask: <one question>`, then one deeper choice line. The words guess/ask follow your language; the percent has no square brackets. Number D from 1 each reply; answer `d1.a`. The recommended `<a>` is the assistant's own guess. Work continues within existing authority; a guess grants no approval or consent. Do not repeat an unanswered item in consecutive replies. With nothing worth asking, show the label only. A Quest requires the Admin-Zone at the end; DeepQuests alone does not.
 - **Empty section:** show only its numbered English label, for example `4. **Pending:**`.
 
 <a name="compass"></a>
@@ -177,7 +182,7 @@ Task: *"The login test fails for the new client. Fix it and tell me where we are
 
 | | Default agent | [i-have-adhd](https://github.com/ayghri/i-have-adhd) | ihav-asd-ste100 |
 |---|---|---|---|
-| Words (inline code counts as one) | 166 | 82 | 157 |
+| Words (inline code counts as one) | 166 | 82 | 158 |
 | Longest sentence | 57 words | 18 words | 15 words |
 | Where the approval is | Mid-paragraph | First and last line ("Next:") | 5.Quests, as "Approve:" with options |
 | The failing test in the summary | "probably unrelated" | Inside a numbered step | Conclusion line: "cause not checked" |
@@ -236,6 +241,7 @@ The samples are illustrative: written by hand from each project's published rule
 >    - **R1.** `jsonwebtoken` 8.5.1 is older than the 9.0.0 security release.
 >      - `<a>` update it after the deploy | (b) skip | (c) later
 > 7. **Ideas:**
+> 8. **DeepQuests:**
 
 Full files: [examples/compare/](examples/compare/).
 </details>
@@ -248,7 +254,7 @@ The section numbers are the same in every language, so a script can find section
 
 ## Any language
 
-The reply body follows your language. The eight labels stay in English and in the same order. Structural digits and colons stay ASCII; prose punctuation follows the language.
+The reply body follows your language. The nine labels stay in English and in the same order. Structural digits and colons stay ASCII; prose punctuation follows the language.
 
 | Reply body | Example |
 |---|---|
@@ -266,13 +272,13 @@ The maintainers wrote these examples. Native speakers: [fix or add your language
 | | i-have-adhd | ihav-asd-ste100 |
 |---|---|---|
 | Best for | Starting the next action | Decisions, approvals and status across many agent reports |
-| Reply shape | Next action first, numbered steps, one next step at the end | Key-first bullets, a one-sentence conclusion, eight numbered sections |
+| Reply shape | Next action first, numbered steps, one next step at the end | Key-first bullets, a one-sentence conclusion, nine numbered sections |
 | Turned on | By command; always-on with an opt-in flag | On by default after install; `stop ste mode` or an opt-out file |
 | Drift control | Rules at session start | Session start plus one reminder line per prompt |
 | Languages | Rules in English; README in 10 languages | Body follows the user's language; section labels stay in English; examples in 5 languages |
 | Runtimes | Claude Code, Codex, Cursor, Gemini, OpenCode, Pi, Qwen, Kimi | Claude Code, Codex |
 | Offline checker | No | `scripts/check_reply.py`: ASCII markers, Conclusion and section order, indentation, `<a>` markers, any script |
-| Measured evidence | Blind LLM-judge A/B, 14 cases, 3 trials: weighted 4.045 to 4.473; its own release gate failed (3 blocking findings remained) | 10 eval cases written; not run yet, so no scores are claimed |
+| Measured evidence | Blind LLM-judge A/B, 14 cases, 3 trials: weighted 4.045 to 4.473; its own release gate failed (3 blocking findings remained) | 10 earlier local cases; two new DeepQuests cases prepared, not model-run; no scores claimed |
 
 Both are MIT. They agree on more than they differ; pick the one that matches your problem.
 
@@ -312,13 +318,13 @@ Words work in every terminal, screen reader and language. Section numbers do the
 
 <details><summary><strong>Can I check a reply offline?</strong></summary>
 
-Yes: `python3 scripts/check_reply.py reply.md`. It checks the conclusion, the section order, the `<a>` markers and the length in any script. `--profile room` checks a post of Agent Room (the same three zones, but no clock, a `- guess => ...` first line, and only the sections Todos, Pending and Quests). It cannot judge whether a reply is true.
+Yes: `python3 scripts/check_reply.py reply.md`. It checks the conclusion, the section order, the `<a>` markers and the length in any script. `--profile room` checks a post of Agent Room (the same three zones, but no clock, a `- guess => ...` first line, and compact sections Todos, Pending and Quests, or full leader sections 0–7 with optional X and 8.DeepQuests). Missing section 8 only warns in the default profile this release; D items never count as admin questions. It cannot judge whether a reply is true.
 </details>
 
 ## Evidence, honestly
 
 No public project in this space has measured human comprehension. i-have-adhd has the best evidence so far: a blind LLM-judge A/B whose own release gate still failed.
-The maintainers keep ten eval cases for `claude plugin eval` outside this repository. They have not run yet, so this README claims no scores.
+The maintainers keep ten earlier eval cases outside this repository. Two new local cases cover long-term questions and an empty DeepQuests label; see [the long-term example](examples/deepquests-en.md) and [the empty example](examples/deepquests-empty-en.md). No model eval was run for this release, and no scores are claimed.
 The research behind each rule, with sources and strength ratings, is in [docs/RESEARCH.md](docs/RESEARCH.md).
 
 ## Made for Agent Room

@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "ihav-asd-ste100",
-      "description": "Key-first bullets, a one-sentence Conclusion, then eight fixed status sections.",
+      "description": "Key-first bullets, a one-sentence Conclusion, then nine fixed status sections.",
       "source": "./",
       "category": "productivity"
     }

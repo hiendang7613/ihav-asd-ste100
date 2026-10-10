@@ -31,3 +31,6 @@
 7. **Ideas:**
    - **I1.** Thêm test gửi `Authorization: Bearer <token>`, để lỗi này không quay lại.
      - `<a>` lên kế hoạch | (b) bỏ qua | (c) để sau
+8. **DeepQuests:**
+   - **D1.** đoán ~70%: bạn muốn mọi client dùng chung một luồng đăng nhập lâu dài | hỏi: giữ hướng này?
+     - `<a>` Một luồng chung | (b) mỗi client một luồng | (c) để sau
