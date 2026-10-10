@@ -38,18 +38,46 @@ export function cacheBase() {
   return path.join(configDir(), "plugins", "cache", "ihav", "ihav-asd-ste100");
 }
 
-// Returns the core file of the active release, or null when the pointer is missing or fails a check.
-export function activeCore() {
+export function readActivePointer() {
   try {
     const file = pointerFile();
     const stat = fs.lstatSync(file);
     if (!stat.isFile() || (process.getuid && stat.uid !== process.getuid()) || (stat.mode & 0o022)) return null;
     const pointer = JSON.parse(fs.readFileSync(file, "utf8"));
     if (pointer.launcher_protocol !== PROTOCOL || typeof pointer.root !== "string") return null;
-    return coreIn(pointer.root);
+    return pointer;
   } catch {
     return null;
   }
+}
+
+// Protocol 1 keeps root for old launchers. Updated hosts can resolve the same version in their own cache.
+export function pointerCore(pointer) {
+  if (!pointer || typeof pointer.root !== "string") return null;
+  const direct = coreIn(pointer.root);
+  if (direct) return direct;
+  try {
+    const base = fs.realpathSync(cacheBase());
+    // A broken or escaping path in this host's cache must fail, not fall through to a different release.
+    const lexical = path.resolve(pointer.root);
+    if (lexical === path.resolve(cacheBase()) || lexical.startsWith(path.resolve(cacheBase()) + path.sep)) return null;
+    try {
+      const root = fs.realpathSync(pointer.root);
+      if (root === base || root.startsWith(base + path.sep)) return null;
+    } catch { /* A removed other-host cache can still name the version. */ }
+    if (!path.isAbsolute(pointer.root) || typeof pointer.version !== "string" ||
+        !/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(pointer.version)) return null;
+    const root = path.join(cacheBase(), pointer.version);
+    const core = coreIn(root);
+    if (!core) return null;
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, ".claude-plugin", "plugin.json"), "utf8"));
+    return manifest.name === "ihav-asd-ste100" && manifest.version === pointer.version ? core : null;
+  } catch { return null; }
+}
+
+// Missing or tampered pointers always fall back to the launcher's own copy.
+export function activeCore() {
+  return pointerCore(readActivePointer());
 }
 
 // The core file of a release root inside the cache base, or null.
