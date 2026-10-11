@@ -20,6 +20,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { configDir } from "./active.mjs";
+import { OPEN_ITEMS_PATH, openItemsBlock } from "./open-items.mjs";
 
 const OFF_FILE = ".ihav-asd-ste100-off";
 const OFF_EXACT = new Set(["stop ste mode", "normal mode"]);
@@ -46,7 +47,7 @@ const COMPASS_RULE =
   "`- **X!** ID: what, why; choose in Quests.` Small or exact-output replies get no X.";
 
 // The first compass file from cwd up to the git root, or "". Without a git root only cwd itself is searched.
-function compassFile(cwd) {
+function projectFile(cwd, relativePath = COMPASS_PATH) {
   const start = path.resolve(cwd);
   let root = start;
   for (let dir = start, depth = 0; depth < 64; depth++) {
@@ -58,8 +59,8 @@ function compassFile(cwd) {
     dir = path.dirname(dir);
   }
   for (let dir = start; ; dir = path.dirname(dir)) {
-    const file = path.join(dir, COMPASS_PATH);
-    if (fs.existsSync(file)) return file;
+    const file = path.join(dir, relativePath);
+    try { fs.lstatSync(file); return file; } catch (error) { if (error.code !== "ENOENT") return file; }
     if (dir === root) return "";
   }
 }
@@ -95,7 +96,7 @@ function fit(lines) {
 function compassBlock(cwd, all) {
   try {
     if (typeof cwd !== "string" || !cwd) return "";
-    const file = compassFile(cwd);
+    const file = projectFile(cwd);
     if (!file || !fs.statSync(file).isFile()) return "";
     const fd = fs.openSync(file, "r");
     let text;
@@ -224,10 +225,11 @@ function run() {
   if (event === "SessionStart") {
     if (fs.existsSync(marker)) return "";
     const compass = compassBlock(input.cwd, false);
+    const items = typeof input.cwd === "string" && input.cwd ? openItemsBlock(projectFile(input.cwd, OPEN_ITEMS_PATH)) : "";
     const text =
       "STE REPLY MODE ACTIVE (on by default). The rules below apply to every reply. " +
       `"stop ste mode" turns them off for this session; create ${offFile} to turn them off everywhere.\n\n${skillBody()}\n` +
-      (compass ? `\n${compass}\n` : "");
+      (compass ? `\n${compass}\n` : "") + (items ? `\n${items}\n` : "");
     remember(input.session_id);  // only after the body was read, so a failed read retries on the next event
     return text;
   }
@@ -245,7 +247,8 @@ function run() {
     // treat it as an old session so it receives the current rules once.
     const known = seen(input.session_id) || (process.env.IHAV_STE100_BRIDGED === "1" ? "a release before 0.18.0" : "");
     const compass = compassBlock(input.cwd, COMPASS_ALL.has(prompt));
-    const reminder = `${REMINDER}${compass ? ` ${compass}` : ""} Now ${clock()}.\n`;
+    const items = typeof input.cwd === "string" && input.cwd ? openItemsBlock(projectFile(input.cwd, OPEN_ITEMS_PATH), prompt === "o") : "";
+    const reminder = `${REMINDER}${compass ? ` ${compass}` : ""}${items ? ` ${items}` : ""} Now ${clock()}.\n`;
     const text =
       known && known !== version()
         ? `STE REPLY RULES UPDATED to ${version()} (was ${known}). The rules below replace the earlier ones.\n\n` +

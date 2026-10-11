@@ -66,7 +66,7 @@ class SkillTests(unittest.TestCase):
         self.assertIn("name action and target, and state what cannot be undone", self.text)
         self.assertIn("Never omit a failure, material finding or requested detail", self.text)
         self.assertIn("Count passes; list each failure", self.text)
-        for rule in ("Open with the answer or blocker", "Give each item one home",
+        for rule in ("Answer/blocker first, then facts and evidence", "Give each item one home",
                      "deferred work as B lines", "Number Q, R, I and D from 1 in every reply; Q1.a or d1.a means the latest reply", "The ~ percent is your estimate, one # per 10% in the bar",
                      "G and B lines are plain", "always has an L", "with none, propose one in Quests as plain text", "a finished aim stays at 100%",
                      "\"az\" or \"adminzone\" means the Admin-Zone alone", "A reply with a Quest always ends with the Admin-Zone", "except in L progress", "about 12 words with only the result or proving ID", "add no new fact or evidence list",

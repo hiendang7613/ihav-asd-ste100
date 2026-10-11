@@ -45,7 +45,8 @@ COMPASS_ID = r"[A-Za-z][0-9]+"
 PROPOSED_MARK = "(proposed, not enforced)"
 # Numbered lists: Goals items are **L1.** (long-term aim), **G1.** (current goal) and **B1.** (deferred work);
 # decision lists use **Q1.**, **R1.**, **I1.** and **D1.**.
-ID_KEYS = {GOALS: "LGB", QUESTIONS: "Q", RISKS: "R", IDEAS: "I", DEEPQUESTS: "D"}
+ID_KEYS = {GOALS: "LGB", QUESTIONS: "QO", RISKS: "RO", IDEAS: "IO", DEEPQUESTS: "DO"}
+LOCAL_KEYS = {QUESTIONS: "Q", RISKS: "R", IDEAS: "I", DEEPQUESTS: "D"}
 MUST_CHOOSE = (RISKS, IDEAS, DEEPQUESTS)
 ALWAYS_SHOWN = tuple(n for n in SECTIONS if n != DEEPQUESTS)  # missing 8 warns during this release
 BAR_WIDTH = 10
@@ -78,7 +79,9 @@ FULLWIDTH_MARKER_LINE = re.compile(r"(?m)^\s*(?:[-*]\s+)?\*\*[^*\n]{1,40}：\*\*
 SUB_ITEM = re.compile(r"^\s{2,}[-*]\s+(.*)$")
 BOLD_KEY = re.compile(r"^\*\*[^*:\n]{1,40}:\*\*(\s|$)")
 OPTION_ITEM = re.compile(r"^(?:`<a>`|\([a-z]\))(?:\s|$)")
-ID_CANDIDATE = re.compile(r"\*\*[QRID]\d+\.\*\*")
+ID_CANDIDATE = re.compile(r"\*\*[QRIDO]\d+\.\*\*")
+OPEN_ROW = re.compile(r"^- (O[1-9][0-9]*) \| ([QRID]) \| ([^|\r\n]+) \| (\S.*)$")
+OPEN_COUNT = re.compile(r"^\*\*Open items:\*\* ([0-9]{1,9}) earlier open items: ([0-9]{1,9}) Quests, ([0-9]{1,9}) Risks, ([0-9]{1,9}) Ideas, ([0-9]{1,9}) DeepQuests; type `o` to see all\.?$")
 RECOMMENDED = "`<a>`"
 EVIDENCE_ODD = re.compile(r"\((?:checked|verified|unverified|unchecked|not verified)\)", re.I)
 ZONES = ("Agents-Zone", "Result-Zone", "Admin-Zone")
@@ -199,7 +202,7 @@ def split_reply(text):
 def item_problems(number, sub_items):
     """Each top-level item in a section starts with a bold key; in a decision list the key is its ID: **Q1.**, **R1.**, **I1.**"""
     letters = ID_KEYS.get(number)
-    key = re.compile(r"^\*\*[%s][0-9]+\.\*\*\s" % letters) if letters else BOLD_KEY
+    key = re.compile(r"^\*\*(?!O0)[%s][0-9]+\.\*\*\s" % letters) if letters else BOLD_KEY
     shown = " or ".join("**%s1.**" % letter for letter in letters) if letters else "**Key:**"
     return ["Section %d item must start with %s: %s..." % (number, shown, item[:30])
             for item in (SUB_ITEM.match(line).group(1) for line in sub_items
@@ -232,7 +235,7 @@ def question_problems(number, sub_items):
 def indentation_problems(number, sub_items):
     """Require three spaces for keyed section items and five for option markers."""
     letters = ID_KEYS.get(number)
-    key = re.compile(r"^\*\*[%s][0-9]+\.\*\*\s" % letters) if letters else BOLD_KEY
+    key = re.compile(r"^\*\*(?!O0)[%s][0-9]+\.\*\*\s" % letters) if letters else BOLD_KEY
     problems = []
     for line in sub_items:
         indent = len(line) - len(line.lstrip())
@@ -249,13 +252,47 @@ def indentation_problems(number, sub_items):
 def numbering_problems(number, sub_items):
     """Q, R, I and D items restart at 1 in every reply, so Q1.a or d1.a means the latest reply.
     L, G and B keep stable IDs across replies and are not checked here."""
-    letter = ID_KEYS[number]
+    letter = LOCAL_KEYS[number]
     found = [int(match.group(1)) for match in (re.match(r"^\*\*%s([0-9]+)\.\*\*" % letter, SUB_ITEM.match(line).group(1))
                                                for line in sub_items if len(line) - len(line.lstrip()) <= 3) if match]
     if found != list(range(1, len(found) + 1)):
         return ["Section %d numbers %s; number %s items from %s1 in every reply, in order."
                 % (number, ", ".join("%s%d" % (letter, n) for n in found), letter, letter)]
     return []
+
+
+def open_count_problems(number, sub_items):
+    problems, found = [], 0
+    for line in sub_items:
+        item = SUB_ITEM.match(line).group(1)
+        if not item.startswith("**Open items:"):
+            continue
+        found += 1
+        match = OPEN_COUNT.fullmatch(item)
+        if number != PENDING or not match:
+            problems.append("The Open items count belongs under 4. Pending with N and four kind counts; type `o` to see all.")
+        elif int(match[1]) != sum(int(match[n]) for n in range(2, 6)):
+            problems.append("The Open items total must equal its four kind counts.")
+    if found > 1:
+        problems.append("Show the Open items count once under Pending.")
+    return problems
+
+
+def open_alone_check(text):
+    """The o reply copies only Open headings/rows; this validates shape, never completeness against disk."""
+    problems, ids, kinds = [], set(), {kind: 0 for kind in "QRID"}
+    for line in text.strip().splitlines():
+        if not line.strip() or re.fullmatch(r"## Open(?:\s*[—-].*)?", line):
+            continue
+        match = OPEN_ROW.fullmatch(line)
+        if not match:
+            problems.append("An o reply holds only Open group headings and stable O register rows.")
+        elif match[1] in ids:
+            problems.append("An o reply repeats stable ID %s." % match[1])
+        else:
+            ids.add(match[1]); kinds[match[2]] += 1
+    return {"ok": not problems, "violations": problems, "warnings": [],
+            "stats": {"open_alone": True, "open_items": len(ids), "kinds": kinds}}
 
 
 def deepquest_problems(sub_items):
@@ -357,7 +394,8 @@ def pending_warnings(sections):
     return ["Pending item '%s' should start with 'Waiting on <who or what>:'." % item[:30]
             for number, _, _, subs in sections if number == PENDING
             for item in (SUB_ITEM.match(line).group(1) for line in subs if len(line) - len(line.lstrip()) <= 3)
-            if not re.match(r"^(?:\*\*|\*\*[^*:\n]{1,40}:\*\*\s+)Waiting on\b", item)]
+            if not re.match(r"^(?:\*\*|\*\*[^*:\n]{1,40}:\*\*\s+)Waiting on\b", item)
+            and not OPEN_COUNT.fullmatch(item)]
 
 
 def evidence_warnings(text):
@@ -665,6 +703,7 @@ def room_check(text):
             restored = [restore(item).replace("<a>", RECOMMENDED) for item in items]
             subs = [("     - " if OPTION_ITEM.match(item) else "   - ") + item for item in restored]
             violations.extend(item_problems(n, subs))
+            violations.extend(open_count_problems(n, subs))
             if n in (QUESTIONS, RISKS, IDEAS, DEEPQUESTS):
                 violations.extend(question_problems(n, subs))
                 violations.extend(numbering_problems(n, subs))
@@ -673,10 +712,10 @@ def room_check(text):
             if n == QUESTIONS:
                 if items:
                     quests.append(body)
-                stats["questions"] += sum(bool(re.match(r"^\*\*Q[0-9]+\.\*\*", item)) for item in restored)
+                stats["questions"] += sum(bool(re.match(r"^\*\*[QO][0-9]+\.\*\*", item)) for item in restored)
             if n == DEEPQUESTS:
                 violations.extend(deepquest_problems(subs))
-                stats["deepquests"] += sum(bool(re.match(r"^\*\*D[0-9]+\.\*\*", item)) for item in restored)
+                stats["deepquests"] += sum(bool(re.match(r"^\*\*[DO][0-9]+\.\*\*", item)) for item in restored)
             warnings.extend(pending_warnings([(n, label, "", subs)]))
             continue
         if label not in ROOM_KEPT:
@@ -701,17 +740,22 @@ def room_check(text):
                     violations.append("Question '%s' has %d options marked <a> (need exactly 1)." % (show(question), marked))
         else:
             lead, items = room_bullets(body)
+            violations.extend(open_count_problems(ROOM_KEPT[label], ["   - " + restore(item).replace("<a>", RECOMMENDED) for item in items]))
             if lead or not items:
                 violations.append("%d. **%s:** holds '- ' items." % (ROOM_KEPT[label], label))
             if label == "Pending":
                 warnings.extend("Pending item '%s' should start with 'Waiting on <who or what>:'." % show(item)
-                                for item in items if not re.match(r"(?:\*\*)?Waiting on\b", item))
+                                for item in items if not re.match(r"(?:\*\*)?Waiting on\b", item)
+                                and not OPEN_COUNT.fullmatch(restore(item)))
     violations.extend(problem.replace("above 0. **Goals:**", "before the numbered status sections")
                       for problem in compass_problems(stats["sections"], compass, quests))
     return {"ok": not violations, "violations": violations, "warnings": warnings, "stats": stats}
 
 
 def check(text, profile="full"):
+    first_raw = next((line for line in text.strip().splitlines() if line.strip()), "")
+    if re.fullmatch(r"## Open(?:\s*[—-].*)?", first_raw):
+        return open_alone_check(text)
     if profile == "room":
         return room_check(text)
     first = next((line.strip() for line in mask_code(text).splitlines() if line.strip()), "")
@@ -744,7 +788,7 @@ def check(text, profile="full"):
         if missing:
             violations.append("Sections %s must be shown; an empty one shows only its label." % ", ".join(str(n) for n in missing))
         if DEEPQUESTS not in numbers:
-            warnings.append("Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.21.0).")
+            warnings.append("Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.22.0).")
         if numbers != sorted(set(numbers)) or any(n not in SECTIONS for n in numbers):
             violations.append("Sections must be numbered 0 to 8, in order, each once; found %s." % numbers)
         violations.extend(layout)
@@ -757,6 +801,7 @@ def check(text, profile="full"):
                 violations.append("Section %d must show its label only on its line; write each item below it as a "
                                   "sub-item that starts with a bold key." % number)
             violations.extend(item_problems(number, subs))
+            violations.extend(open_count_problems(number, subs))
             violations.extend(indentation_problems(number, subs))
             if number in (QUESTIONS, RISKS, IDEAS, DEEPQUESTS):
                 violations.extend(question_problems(number, subs))
@@ -780,7 +825,7 @@ def check(text, profile="full"):
     if FULLWIDTH_MARKER_LINE.search(strip_code(text)):
         violations.append("Bold structural labels and keys must use an ASCII colon.")
     if any(not match.group()[2:-2].isascii() for match in ID_CANDIDATE.finditer(outside_code)):
-        violations.append("Q, R, I and D IDs must use ASCII digits.")
+        violations.append("Q, R, I, D and O IDs must use ASCII digits.")
     if len(re.findall(r"\*\*Conclusion:\*\*", outside_code)) > 1:
         violations.append("A reply must not contain more than one Conclusion marker.")
     if EMOJI.search(outside_code):
@@ -817,9 +862,9 @@ def check(text, profile="full"):
             "body_words": body_words,
             "conclusion_words": units(conclusion) if conclusion else 0,
             "sections": [number for number, _, _, _ in sections],
-            "questions": sum(bool(re.match(r"^   [-*] \*\*Q[0-9]+\.\*\*", sub))
+            "questions": sum(bool(re.match(r"^   [-*] \*\*[QO][0-9]+\.\*\*", sub))
                              for n, _, _, subs in sections if n == QUESTIONS for sub in subs),
-            "deepquests": sum(bool(re.match(r"^   [-*] \*\*D[0-9]+\.\*\*", sub))
+            "deepquests": sum(bool(re.match(r"^   [-*] \*\*[DO][0-9]+\.\*\*", sub))
                               for n, _, _, subs in sections if n == DEEPQUESTS for sub in subs),
             "compass_lines": sum(bool(re.match(r"^\s+[-*]\s+\*\*%s\.\*\*" % COMPASS_ID, sub))
                                  for _, _, _, subs in compass for sub in subs),

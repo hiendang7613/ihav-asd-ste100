@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.21.0" src="https://img.shields.io/badge/version-0.21.0-4F46E5">
+  <img alt="Version 0.22.0" src="https://img.shields.io/badge/version-0.22.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
@@ -34,6 +34,11 @@
 Coding agents bury the one thing you need: what failed, what needs your OK, what is still running.
 This plugin gives every reply the same shape. Facts come first, one per line.
 A one-sentence conclusion and nine numbered sections close the reply. Your eye learns where to look.
+
+## Open items
+
+Unanswered Quests, Risks, Ideas and DeepQuests stay in the project's `.ihav_space/ihav-asd-ste100/open-items.md` with stable O IDs. Each Admin-Zone reads it, rotates up to three older open items and counts the rest under Pending. Type `o` for the complete Open part; answer `o7.a` or in words. Silence is never yes or no; closing an item needs a reason told once.
+The shared Claude Code/Codex hook carries counts and bounded Quest previews. It never writes the register or proves models followed the rules. For direction messages, the agent guesses the unstated purpose and asks about material uncertainty in DeepQuests. [Register rules](skills/ihav-asd-ste100/references/open-items.md) define the file, closure and rotation; [Updating](INSTALL.md#updating) covers both hosts.
 
 <a name="install"></a>
 
@@ -128,7 +133,7 @@ Every reply that has more than one fact has three zones, each under a bold label
 - **Small answers stay small:** one fact, one sentence. Code-only, JSON-only and one-command requests get exactly that.
 - **One home per item:** each item sits in one section only. When you decide, it moves: accepted to Todos, deferred to a B line in Goals.
 - **Items:** each one is a sub-item under its label that starts with a bold key, such as `   - **Login fix:** merged.` The label line itself stays bare.
-- **DeepQuests:** `guess ~70%: <long-term intent> | ask: <one question>`, then one deeper choice line. The words guess/ask follow your language; the percent has no square brackets. Number D from 1 each reply; answer `d1.a`. The recommended `<a>` is the assistant's own guess. Work continues within existing authority; a guess grants no approval or consent. Do not repeat an unanswered item in consecutive replies. With nothing worth asking, show the label only. A Quest requires the Admin-Zone at the end; DeepQuests alone does not.
+- **DeepQuests:** `guess ~70%: <long-term intent> | ask: <one question>`, then one deeper choice line. The words guess/ask follow your language; the percent has no square brackets. Number D from 1 each reply; answer `d1.a`. The recommended `<a>` is the assistant's own guess. Work continues within existing authority; a guess grants no approval or consent. Unanswered items stay in the register and return in rotation. With nothing worth asking, show the label only. A Quest requires the Admin-Zone at the end; DeepQuests alone does not.
 - **Empty section:** show only its numbered English label, for example `4. **Pending:**`.
 
 <a name="compass"></a>

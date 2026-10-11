@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.0 — 2026-10-11
+- Open items now have stable O IDs in each project's `.ihav_space/ihav-asd-ste100/open-items.md`. Every shown Quest, Risk, Idea and DeepQuest is registered. Closure needs a reason told once, with the user's quoted answer or the default, completion, replacement or drop reason. Silence is never agreement or refusal.
+- Every Admin-Zone reads the register: new items in their sections, at most three older open items in rotation, then one remaining-count line under Pending. `o` shows only the complete Open part; `o7.a` or words answer its stable item. Local Q/R/I/D codes remain compatible. Unanswered DeepQuests return in rotation, replacing 0.21.0's consecutive-reply ban.
+- Direction-setting messages probe unstated what, why, for whom, when and how. Unsure intent goes into a registered DeepQuest; later answers close the O item with quoted words. Guesses never confer consent.
+- Both hosts use the same stable launcher and core. SessionStart and UserPromptSubmit add one read-only Open items block: complete counts, at most three old Quest previews and the rule reminder. Its independent cap is 1,536 UTF-8 bytes; reading is capped at 128 KiB. Missing files add nothing; invalid, oversized or unsafe files add one generic warning without blocking the prompt. Partial dates do not establish calendar age.
+- Full/room checkers accept stable O keys or O references after local keys, the Pending count line, and the `o` register-only shape. They check count arithmetic and format, not that every stored item was shown or that an answer really closed it. Old replies remain compatible.
+- SKILL.md is 7,799 bytes, below 7,800. Full register rules live in its linked reference. Five sentence replacements, with exact old/new text, are recorded in W00-18's handoff; no other behavior is removed. Native activation, reload, persistence by models and model obedience are not proved by offline tests.
+
 ## 0.21.0 — 2026-10-11
 DeepQuests and the reply-sync wording below share this release.
 - One protocol-1 activation now serves Claude Code and Codex: a host outside the recorded root resolves the pointer's version in its own cache. Pointer owner, mode, file type, protocol and realpath containment checks remain. Old root-only pointers keep working in their own host.

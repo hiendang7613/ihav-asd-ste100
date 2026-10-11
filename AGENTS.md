@@ -4,7 +4,7 @@ Map for agents working on this repository. The behavior lives in `skills/ihav-as
 
 | Area | Location | Purpose |
 | --- | --- | --- |
-| Canonical rules | `skills/ihav-asd-ste100/SKILL.md` | The only source of truth for the reply rules. Change it first. |
+| Canonical rules | `skills/ihav-asd-ste100/SKILL.md` and its linked references | Entry point and detailed reply rules. Change them first. |
 | Claude Code | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | Plugin and local marketplace manifests. |
 | Codex | `.codex-plugin/plugin.json` | Codex manifest; skills from `./skills/`. |
 | Hooks | `hooks/hooks.json`, `hooks/ste-mode.mjs` (stable launcher), `hooks/ste-core.mjs`, `hooks/active.mjs`, `scripts/activate.mjs` | The launcher uses the checked root in `~/.ihav/active/ihav-asd-ste100.json`, or that version inside its own host cache when the root belongs to another host, else its own copy. `--all-hosts` copies to installed ihav caches; [Updating](INSTALL.md#updating) covers the first native bootstrap. Keep `hooks.json` and the launcher stable. On by default after install (opt-out file or `IHAV_ASD_STE100=off`): SessionStart injects the skill; UserPromptSubmit adds a one-line reminder with the local time and handles "stop ste mode" / "ste mode"; PostToolBatch (Claude Code) adds the local time after each batch of tool calls, for the Agents-Zone step times. A project Compass file (`.ihav_space/ihav-asd-ste100/compass.md`, found from the hook input's `cwd` up to the git root) adds its active lines to SessionStart and every prompt; no file, no change. |

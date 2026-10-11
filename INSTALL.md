@@ -49,16 +49,21 @@ python3 <plugin folder>/scripts/check_compass.py <project>/.ihav_space/ihav-asd-
 
 After updating the plugin, run `node <its cache folder>/scripts/activate.mjs` (see the README) so open sessions get the new rules once.
 
+## Open items (per project)
+
+The agent records unanswered Quests, Risks, Ideas and DeepQuests in `<project>/.ihav_space/ihav-asd-ste100/open-items.md`. Stable O IDs survive reply numbering; `o` shows only Open, and `o7.a` or words answer an item. The hook reads this file; it does not create, resolve or rewrite it. The same cwd-to-git-root lookup applies as for Compass. Worktrees need their own register.
+Missing files add no hook context. Malformed, symlinked, nonregular or over-128-KiB files add at most one warning. The preview is capped independently at 1,536 bytes and is not a complete list. See [register rules](skills/ihav-asd-ste100/references/open-items.md). Actual model persistence and compliance need a separate native check.
+
 ## Updating
 Run from the release checkout; these commands target existing `ihav-asd-ste100@ihav` installs, not other marketplaces.
 ```bash
-node scripts/activate.mjs --prepare-marketplace "$HOME/.ihav/local-ste100-0.21.0"
-codex -c "marketplaces.ihav={source_type=\"local\",source=\"$HOME/.ihav/local-ste100-0.21.0\"}" plugin add ihav-asd-ste100@ihav
+node scripts/activate.mjs --prepare-marketplace "$HOME/.ihav/local-ste100-0.22.0"
+codex -c "marketplaces.ihav={source_type=\"local\",source=\"$HOME/.ihav/local-ste100-0.22.0\"}" plugin add ihav-asd-ste100@ihav
 node scripts/activate.mjs --all-hosts
 ```
 The Codex command bootstraps an old launcher without replacing the configured marketplace. Later releases need only `--all-hosts`.
 The last command copies this release into both installed host caches, smoke-checks each host, then changes one shared pointer. Missing hosts stay uninstalled.
-Claude Code uses the same last command; its existing launcher follows the pointer. For a native local registry update, run `claude plugin marketplace add "$HOME/.ihav/local-ste100-0.21.0"`, then `claude plugin update ihav-asd-ste100@ihav`; restore its original catalogue with `claude plugin marketplace add <original-source>` afterward, since the temporary catalogue lists only this plugin.
+Claude Code uses the same last command; its existing launcher follows the pointer. For a native local registry update, run `claude plugin marketplace add "$HOME/.ihav/local-ste100-0.22.0"`, then `claude plugin update ihav-asd-ste100@ihav`; restore its original catalogue with `claude plugin marketplace add <original-source>` afterward, since the temporary catalogue lists only this plugin.
 Manual: in Codex, run `/hooks`, review and trust if requested, then restart or resume the session. Native trust and running-session reload were not tested offline.
 An old launcher accepts the same-host root; an old other-host launcher falls back to its own release until the native bootstrap. Native Codex updates can delete old cache folders.
 Rollback: `node scripts/activate.mjs --all-hosts --rollback`. It needs the retained previous release and changes active rules, not native registry versions; 0.19.3 restores legacy text and warns that Codex loses prompt context.
