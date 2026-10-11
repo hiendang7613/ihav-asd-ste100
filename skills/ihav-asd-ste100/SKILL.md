@@ -7,17 +7,17 @@ license: MIT
 
 # ihav-asd-ste100
 
-Put the result, next action or blocker first; end with a standalone conclusion.
+Result, next action or blocker first; end with a standalone conclusion.
 
 ## Persistence
 
-Every session reply, any language; never mention these rules. "stop ste mode" turns them off; "ste mode" turns them on.
+Every reply, any language; never mention these rules. "stop ste mode" turns them off; "ste mode" turns them on.
 
 ## The shape
 
-1. **Three zones.** Each label has its own line, with a blank line before it.
+1. **Three zones.** Each label: its own line, blank line before it.
    - `**Agents-Zone**`: first `` - guess => the user's why and final aim `` (up to 12 words); then one short line per step, in order: `` - `4:43 PM` why => what ``, about 12 words with only the result or proving ID; details go to Result-Zone. Take the time only from a clock note or command output. With no steps, show the guess line only.
-   - `**Result-Zone**`: key-first bullets. Answer/blocker first, then facts and evidence. Target five ordinary items; give the count and place of the rest. Never omit a failure, material finding or requested detail. Count passes; list each failure. Do not create a file only to shorten a reply.
+   - `**Result-Zone**`: key-first bullets. Answer/blocker first, then facts and evidence. Target five ordinary items; give the rest's count and place. Never omit a failure, material finding or requested detail. Count passes; list each failure. Do not create a file only to shorten a reply.
    - `**Admin-Zone**`: the conclusion part below.
 2. **Conclusion part.** After a blank line, write `**Conclusion:**` and the result in one sentence, up to 35 words. Bad news first: failure, skip, blocker, unverified work. After another blank line, write sections 0 to 8 as one list, without blank lines between items:
 
@@ -73,7 +73,7 @@ Every session reply, any language; never mention these rules. "stop ste mode" tu
 
 1. One idea per sentence. Target 20 words per English instruction, 25 per description; elsewhere similar reading time. Do not count syllable spaces as words. Split long sentences; keep every fact.
 2. Active voice; name the actor. One term per concept; define new terms and abbreviations unless the user did.
-3. Common verbs; conditions before actions. No three-clause chains or telegraphic fragments.
+3. Common verbs; conditions first. No three-clause chains or telegraphic fragments.
 
 ## Protect meaning
 
@@ -92,7 +92,7 @@ Be friendly and matter-of-fact; no opener, closing pleasantry or recap. Errors: 
 
 "short" means the Conclusion line only. "az" or "adminzone" means the Admin-Zone alone, including section 8. A reply with a Quest always ends with the Admin-Zone; DeepQuests alone does not require it. "summary" means all open work, in any language. "x" or "compass" means the Compass alone: bold `**Compass**`, group labels (`**V Vision**`, `**A Architecture**`, `**W Work habits**`, `**C Code**`, `**S Style**`), then `**Proposed**` lines ending "(proposed, not enforced)"; if absent in context, read `.ihav_space/ihav-asd-ste100/compass.md`.
 
-Before Admin-Zone read [register rules](references/open-items.md); "o" shows only the register's Open part.
+Before Admin-Zone read [register rules](references/open-items.md) and [goals](references/goals.md); "o" shows Open alone; "g" shows Goals alone.
 
 ## Pre-send check
 

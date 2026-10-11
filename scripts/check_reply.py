@@ -5,6 +5,7 @@ Usage:
   python3 scripts/check_reply.py REPLY.md --json     # machine-readable report
   cat reply.md | python3 scripts/check_reply.py -    # read standard input
   python3 scripts/check_reply.py POST.txt --profile room   # a post of Agent Room (see below)
+  python3 scripts/check_reply.py REPLY.md --goals-register PROJECT/.ihav_space/ihav-asd-ste100/goals.md
 
 Exit code 0 when there is no violation, 1 otherwise. Warnings never fail the check.
 The check covers what can be checked mechanically: the three zone labels and step lines, the conclusion part,
@@ -16,6 +17,8 @@ An optional first section `X. **Compass:**` (up to 5 compass lines, each optiona
 [~95%], a last More item, X! deviation items) and the Compass-alone reply to "x" are checked too; a project without a
 Compass file never has them.
 It cannot judge meaning, accuracy or tone; a passing reply can still be wrong.
+With --goals-register, an Admin-Zone must list every registered L id in section 0; a reply without one is exempt.
+The reply to "g" is the canonical 0. Goals section alone, with the same item and register checks.
 
 Profile room checks a post of Agent Room, the subset of this shape that the room keeps; the text may be one line, as the
 room stores it. A post with no zone label is a one-fact post or an older report and passes (the room shows it whole).
@@ -32,8 +35,11 @@ for scripts written without spaces.
 """
 
 import json
+import os
 import re
+import stat
 import sys
+from pathlib import Path
 
 SECTIONS = {0: "Goals", 1: "Done", 2: "Doing", 3: "Todos", 4: "Pending", 5: "Quests", 6: "Risks", 7: "Ideas", 8: "DeepQuests"}
 GOALS, PENDING, QUESTIONS, RISKS, IDEAS, DEEPQUESTS = 0, 4, 5, 6, 7, 8
@@ -82,6 +88,9 @@ OPTION_ITEM = re.compile(r"^(?:`<a>`|\([a-z]\))(?:\s|$)")
 ID_CANDIDATE = re.compile(r"\*\*[QRIDO]\d+\.\*\*")
 OPEN_ROW = re.compile(r"^- (O[1-9][0-9]*) \| ([QRID]) \| ([^|\r\n]+) \| (\S.*)$")
 OPEN_COUNT = re.compile(r"^\*\*Open items:\*\* ([0-9]{1,9}) earlier open items: ([0-9]{1,9}) Quests, ([0-9]{1,9}) Risks, ([0-9]{1,9}) Ideas, ([0-9]{1,9}) DeepQuests; type `o` to see all\.?$")
+GOALS_READ_MAX = 128 * 1024
+GOAL_REGISTER_ROW = re.compile(r"^- (L[1-9][0-9]*) \| ~([0-9]{1,3})%(?: \(was [0-9]{1,3}\))? \| (\S.*)$")
+GOAL_REPLY_KEY = re.compile(r"^   [-*] \*\*(L[1-9][0-9]*)\.\*\*\s+")
 RECOMMENDED = "`<a>`"
 EVIDENCE_ODD = re.compile(r"\((?:checked|verified|unverified|unchecked|not verified)\)", re.I)
 ZONES = ("Agents-Zone", "Result-Zone", "Admin-Zone")
@@ -752,7 +761,7 @@ def room_check(text):
     return {"ok": not violations, "violations": violations, "warnings": warnings, "stats": stats}
 
 
-def check(text, profile="full"):
+def shape_check(text, profile="full"):
     first_raw = next((line for line in text.strip().splitlines() if line.strip()), "")
     if re.fullmatch(r"## Open(?:\s*[—-].*)?", first_raw):
         return open_alone_check(text)
@@ -788,7 +797,7 @@ def check(text, profile="full"):
         if missing:
             violations.append("Sections %s must be shown; an empty one shows only its label." % ", ".join(str(n) for n in missing))
         if DEEPQUESTS not in numbers:
-            warnings.append("Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.22.0).")
+            warnings.append("Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.23.0).")
         if numbers != sorted(set(numbers)) or any(n not in SECTIONS for n in numbers):
             violations.append("Sections must be numbered 0 to 8, in order, each once; found %s." % numbers)
         violations.extend(layout)
@@ -873,17 +882,189 @@ def check(text, profile="full"):
     }
 
 
+def goals_alone_check(text):
+    """The g shortcut returns only the canonical Goals label and its ordinary L/G/B items."""
+    lines = text.strip().splitlines()
+    problems, warnings = [], []
+    subs = []
+    for line in lines[1:]:
+        if not SUB_ITEM.match(line):
+            problems.append("A Goals-only reply holds only 0. **Goals:** and its L/G/B sub-items.")
+        else:
+            subs.append(line)
+    problems.extend(item_problems(GOALS, subs))
+    problems.extend(indentation_problems(GOALS, subs))
+    problems.extend(goal_problems(subs))
+    if not any(GOAL_REPLY_KEY.match(line) for line in subs):
+        warnings.append("Goals has no L line; only the user sets long-term aims.")
+    outside_code = goals_progress_removed(re.sub(r"`[^`]*`", "", mask_code(text)))
+    if EMOJI.search(outside_code) or re.search(r"[\[\]]", outside_code):
+        problems.append("A Goals-only reply uses no emoji or square brackets outside L estimates and bars.")
+    return {"ok": not problems, "violations": problems, "warnings": warnings,
+            "stats": {"words": units(strip_code(text)), "goals_alone": True, "sections": [GOALS]}}
+
+
+def read_goal_ids(file):
+    """Bound an explicitly requested register read; reject linked, nonregular and invalid files."""
+    path = Path(file)
+    for directory in (path.parent, path.parent.parent):
+        if not stat.S_ISDIR(directory.lstat().st_mode):
+            raise ValueError("not a directory")
+    if not stat.S_ISREG(path.lstat().st_mode):
+        raise ValueError("not a regular file")
+    flags = os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_NOFOLLOW", 0)
+    with os.fdopen(os.open(path, flags), "rb") as stream:
+        before = os.fstat(stream.fileno())
+        if not stat.S_ISREG(before.st_mode) or before.st_size > GOALS_READ_MAX:
+            raise ValueError("invalid size/type")
+        data = stream.read(GOALS_READ_MAX + 1)
+        if len(data) != before.st_size or os.fstat(stream.fileno()).st_size != before.st_size:
+            raise ValueError("changed read")
+    ids, seen, declared = [], set(), False
+    for line in mask_code(data.decode("utf-8-sig")).splitlines():
+        declared |= bool(re.match(r"^## L(?:[0-9]|\s|$)", line))
+        if not line.startswith("- L"):
+            continue
+        match = GOAL_REGISTER_ROW.fullmatch(line)
+        if not match or int(match[2]) > 100 or match[1] in seen:
+            raise ValueError("invalid goal row")
+        ids.append(match[1])
+        seen.add(match[1])
+    if not declared and not ids:
+        raise ValueError("no L rows")
+    return ids
+
+
+def goal_code_masked(text):
+    """Hide code examples before reading structure; prose cannot hide actual zone boundaries."""
+    return re.sub(r"(`+)(?:(?!\1).)*?\1", lambda match: " " + "\n" * match.group(0).count("\n"),
+                  mask_code(text), flags=re.S)
+
+
+def goal_literals_masked(text):
+    """Mask clear examples; return uncertainty rather than guess a word-final apostrophe's meaning.
+
+    Inside single-quoted prose, a word-final apostrophe followed by another word can be a
+    possessive or a closing quote. Do not mask later real rows or claim completeness then.
+    Code spans and paired straight or typographic double quotes provide an unambiguous
+    alternative. Paired ‘…’ examples follow the same apostrophe rule as '…'. Preserve newlines.
+    Call this only after the actual Goals body boundaries have been read.
+    """
+    blank = lambda match: " " + "\n" * match.group(0).count("\n")
+    text = goal_code_masked(text)
+    text = re.sub(r'"(?:\\.|[^"\\])*"', blank, text)
+    text = re.sub(r'“(?:\\.|[^”\\])*”', blank, text)
+    chars, opening, closing, index = list(text), None, None, 0
+    while index < len(text):
+        if text[index] == "\\":
+            index += 2
+            continue
+        if text[index] in "'‘’":
+            before = bool(index and re.match(r"\w", text[index - 1]))
+            after = bool(index + 1 < len(text) and re.match(r"\w", text[index + 1]))
+            if opening is None:
+                if not before and text[index] in "'‘":
+                    opening = index
+                    closing = "’" if text[index] == "‘" else "'"
+            elif text[index] != closing:
+                pass
+            elif before and after:
+                pass  # A contraction or singular possessive within the quoted example.
+            elif before and re.match(r"\s+\w", text[index + 1:]):
+                return ''.join(chars), True
+            else:
+                chars[opening:index + 1] = ['\n' if c == '\n' else ' ' for c in chars[opening:index + 1]]
+                opening = None
+        index += 1
+    return ''.join(chars), opening is not None
+
+
+def shown_goal_ids(text, profile, alone):
+    """Count keyed L items and assess quote uncertainty only within actual Goals bodies."""
+    if alone:
+        bodies = ["\n".join(text.strip().splitlines()[1:])]
+    elif profile != "room":
+        lines = text.splitlines()
+        admin = next((i for i, line in enumerate(lines) if ZONE_LINE.fullmatch(line.strip())
+                      and ZONE_LINE.fullmatch(line.strip())[1] == "Admin-Zone"), len(lines))
+        heads = [(i, match) for i, line in enumerate(lines) if i > admin and (match := SECTION_LINE.match(line))]
+        bodies = ["\n".join(lines[start + 1:heads[index + 1][0] if index + 1 < len(heads) else len(lines)])
+                  for index, (start, head) in enumerate(heads) if head[1] == "0" and head[2] == "Goals"]
+    else:
+        flat = re.sub(r"\s+", " ", text).strip()
+        labels = list(ROOM_LABEL.finditer(flat))
+        admin = next((flat[label.end():] for label in labels if label[1].casefold() == "admin"), "")
+        heads = [m for m in ROOM_SECTION.finditer(admin) if m[1] is not None]
+        bodies = [admin[head.end():heads[index + 1].start() if index + 1 < len(heads) else len(admin)]
+                  for index, head in enumerate(heads) if head[1] == "0" and head[2].casefold() == "goals"]
+    shown = []
+    for body in bodies:
+        masked, ambiguous = goal_literals_masked(body)
+        if ambiguous:
+            return [], True
+        if alone or profile != "room":
+            shown.extend(match[1] for line in masked.splitlines() if (match := GOAL_REPLY_KEY.match(line)))
+        else:
+            shown.extend(key[1] for key in re.finditer(r"(?:^|\s)[-*]\s+\*\*(L[1-9][0-9]*)\.\*\*\s+", masked))
+    return shown, False
+
+
+def check(text, profile="full", goals_register=None):
+    first = next((line for line in text.splitlines() if line.strip()), "")
+    alone = first == "0. **Goals:**"
+    report = goals_alone_check(text) if alone else shape_check(text, profile)
+    if goals_register is None:
+        return report
+    masked = goal_code_masked(text)
+    has_admin = (any(ZONE_LINE.fullmatch(line.strip()) and ZONE_LINE.fullmatch(line.strip())[1] == "Admin-Zone"
+                     for line in masked.splitlines()) if profile != "room" else
+                 any(label[1].casefold() == "admin" for label in ROOM_LABEL.finditer(masked)))
+    if not has_admin and not alone:
+        report["stats"]["goals_register_exempt"] = True
+        return report
+    try:
+        required = read_goal_ids(goals_register)
+    except (OSError, ValueError, UnicodeError):
+        report["violations"].append("Goals register unavailable; completeness not checked (invalid, linked, unreadable or oversized).")
+    else:
+        shown, ambiguous = shown_goal_ids(masked, profile, alone)
+        if ambiguous:
+            report["stats"].update(goals_register_ids=required, goals_completeness_unknown=True)
+            report["violations"].append("Goals completeness is unknown for ambiguous single-quoted text; use code spans or double quotes.")
+            report["ok"] = False
+            return report
+        missing = [ident for ident in required if ident not in shown]
+        report["stats"].update(goals_register_ids=required, goal_ids=shown, missing_goal_ids=missing)
+        if missing:
+            report["violations"].append("Goals register ids missing from section 0: %s." % ", ".join(missing))
+        repeated = list(dict.fromkeys(ident for ident in shown if shown.count(ident) > 1))
+        if repeated:
+            report["violations"].append("Repeated L ids in section 0: %s." % ", ".join(repeated))
+        extra = [ident for ident in shown if ident not in required]
+        if extra:
+            report["warnings"].append("Goals ids not in the register: %s; only the user sets L aims." % ", ".join(extra))
+    report["ok"] = not report["violations"]
+    return report
+
+
 def main(argv):
-    args, profile = argv[1:], "full"
+    args, profile, goals_register = argv[1:], "full", None
     if "--profile" in args and args.index("--profile") + 1 < len(args):
         profile = args[args.index("--profile") + 1]
         del args[args.index("--profile"):args.index("--profile") + 2]
+    if "--goals-register" in args:
+        index = args.index("--goals-register")
+        if index + 1 >= len(args) or args[index + 1].startswith("-"):
+            print(__doc__.strip())
+            return 2
+        goals_register = args[index + 1]
+        del args[index:index + 2]
     paths = [arg for arg in args if arg == "-" or not arg.startswith("-")]
     if not paths or any(arg in {"-h", "--help"} for arg in args) or profile not in PROFILES:
         print(__doc__.strip())
         return 2
     text = sys.stdin.read() if paths[0] == "-" else open(paths[0], encoding="utf-8").read()
-    report = check(text, profile)
+    report = check(text, profile, goals_register)
     if "--json" in argv:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:

@@ -38,7 +38,7 @@ export function parseOpenItems(text) {
   return entries;
 }
 
-function readRegister(file) {
+export function readRegister(file, max = OPEN_READ_MAX) {
   // Do not follow either of the known preference-directory symlinks or a final symlink/FIFO.
   for (const dir of [path.dirname(path.dirname(file)), path.dirname(file)]) {
     if (!fs.lstatSync(dir).isDirectory()) throw new Error("not a directory");
@@ -47,7 +47,7 @@ function readRegister(file) {
   const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK | fs.constants.O_NOFOLLOW);
   try {
     const info = fs.fstatSync(fd);
-    if (!info.isFile() || info.size > OPEN_READ_MAX) throw new Error("invalid size/type");
+    if (!info.isFile() || info.size > max) throw new Error("invalid size/type");
     const data = Buffer.alloc(info.size);
     const size = fs.readSync(fd, data, 0, data.length, 0);
     if (size !== info.size || fs.fstatSync(fd).size !== info.size) throw new Error("changed read");

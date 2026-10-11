@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.0 — 2026-10-11
+- A per-project goals.md register supplies EVERY L goal in every Admin-Zone, with estimated percent/bar, then G/B. Only the user sets, changes or retires L goals; proposals stay proposed. Estimates carry a basis, movement means real work, and three-day stalls need a cheapest next step. Context summaries never replace the full register. `g` returns Goals alone.
+- Both hosts share one read-only Goals hook block: complete IDs and counts, known stale IDs, as many estimates as fit, and three rule sentences. Independent cap: 2,048 UTF-8 bytes; read cap: 128 KiB. Missing adds nothing; invalid, linked, nonregular, unreadable, huge or unfittable-ID files warn once without removing Compass/Open context.
+- The optional --goals-register checker input requires every registered L ID in section 0 when Admin-Zone exists. Literal examples or IDs elsewhere do not satisfy it. Goals-only output is also checked; unrelated replies without Admin-Zone are exempt. No progress, authorship or model-obedience claim.
+- SKILL.md is 7,796 bytes; six exact text replacements are recorded in W00-21 evidence, preserving all existing behaviors. Full goals rules live in the linked reference. Hook configuration, launcher and both-host Updating procedure remain unchanged; no activation or installation is performed by this release task.
+
 ## 0.22.0 — 2026-10-11
 - Open items now have stable O IDs in each project's `.ihav_space/ihav-asd-ste100/open-items.md`. Every shown Quest, Risk, Idea and DeepQuest is registered. Closure needs a reason told once, with the user's quoted answer or the default, completion, replacement or drop reason. Silence is never agreement or refusal.
 - Every Admin-Zone reads the register: new items in their sections, at most three older open items in rotation, then one remaining-count line under Pending. `o` shows only the complete Open part; `o7.a` or words answer its stable item. Local Q/R/I/D codes remain compatible. Unanswered DeepQuests return in rotation, replacing 0.21.0's consecutive-reply ban.

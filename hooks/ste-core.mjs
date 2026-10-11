@@ -21,6 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { configDir } from "./active.mjs";
 import { OPEN_ITEMS_PATH, openItemsBlock } from "./open-items.mjs";
+import { GOALS_PATH, goalsBlock } from "./goals.mjs";
 
 const OFF_FILE = ".ihav-asd-ste100-off";
 const OFF_EXACT = new Set(["stop ste mode", "normal mode"]);
@@ -226,10 +227,11 @@ function run() {
     if (fs.existsSync(marker)) return "";
     const compass = compassBlock(input.cwd, false);
     const items = typeof input.cwd === "string" && input.cwd ? openItemsBlock(projectFile(input.cwd, OPEN_ITEMS_PATH)) : "";
+    const goals = typeof input.cwd === "string" && input.cwd ? goalsBlock(projectFile(input.cwd, GOALS_PATH)) : "";
     const text =
       "STE REPLY MODE ACTIVE (on by default). The rules below apply to every reply. " +
       `"stop ste mode" turns them off for this session; create ${offFile} to turn them off everywhere.\n\n${skillBody()}\n` +
-      (compass ? `\n${compass}\n` : "") + (items ? `\n${items}\n` : "");
+      (compass ? `\n${compass}\n` : "") + (items ? `\n${items}\n` : "") + (goals ? `\n${goals}\n` : "");
     remember(input.session_id);  // only after the body was read, so a failed read retries on the next event
     return text;
   }
@@ -248,7 +250,8 @@ function run() {
     const known = seen(input.session_id) || (process.env.IHAV_STE100_BRIDGED === "1" ? "a release before 0.18.0" : "");
     const compass = compassBlock(input.cwd, COMPASS_ALL.has(prompt));
     const items = typeof input.cwd === "string" && input.cwd ? openItemsBlock(projectFile(input.cwd, OPEN_ITEMS_PATH), prompt === "o") : "";
-    const reminder = `${REMINDER}${compass ? ` ${compass}` : ""}${items ? ` ${items}` : ""} Now ${clock()}.\n`;
+    const goals = typeof input.cwd === "string" && input.cwd ? goalsBlock(projectFile(input.cwd, GOALS_PATH), prompt === "g") : "";
+    const reminder = `${REMINDER}${compass ? ` ${compass}` : ""}${items ? ` ${items}` : ""}${goals ? ` ${goals}` : ""} Now ${clock()}.\n`;
     const text =
       known && known !== version()
         ? `STE REPLY RULES UPDATED to ${version()} (was ${known}). The rules below replace the earlier ones.\n\n` +

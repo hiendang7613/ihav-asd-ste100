@@ -1,4 +1,4 @@
-"""DeepQuests is a nonblocking intent probe; old replies remain valid in 0.22.0."""
+"""DeepQuests is a nonblocking intent probe; old replies remain valid in 0.23.0."""
 import json
 import re
 import unittest
@@ -29,7 +29,7 @@ class DeepQuestTests(unittest.TestCase):
     def test_missing_section_only_warns_and_empty_section_passes_cleanly(self):
         old = check(FULL.replace("8. **DeepQuests:**\n", ""))
         self.assertTrue(old["ok"], old)
-        self.assertEqual(old["warnings"], ["Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.22.0)."])
+        self.assertEqual(old["warnings"], ["Section 8 DeepQuests is missing; show its label even when empty (warning only in 0.23.0)."])
         self.assertEqual(check(FULL)["warnings"], [])
         self.assertEqual(check(FULL)["stats"]["deepquests"], 0)
 
@@ -161,7 +161,7 @@ class DeepQuestTests(unittest.TestCase):
     def test_manifest_version_and_public_section_descriptions_agree(self):
         for name in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
             manifest = json.loads((ROOT / name).read_text())
-            self.assertEqual(manifest["version"], "0.22.0")
+            self.assertEqual(manifest["version"], "0.23.0")
             self.assertIn("nine fixed status sections", manifest["description"])
 
     def test_two_new_eval_shape_graders_match_the_examples_and_reject_the_wrong_home(self):

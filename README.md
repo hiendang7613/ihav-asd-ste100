@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>Agent replies you can read in five seconds.</strong><br>
-  Key-first bullets. One-sentence conclusion. Eight sections, always. Any language.
+  Key-first bullets. One-sentence conclusion. Nine sections, always. Any language.
 </p>
 
 <p align="center">
   <a href="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hiendang7613/ihav-asd-ste100/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4F46E5"></a>
-  <img alt="Version 0.22.0" src="https://img.shields.io/badge/version-0.22.0-4F46E5">
+  <img alt="Version 0.23.0" src="https://img.shields.io/badge/version-0.23.0-4F46E5">
   <img alt="Claude Code and Codex" src="https://img.shields.io/badge/works%20with-Claude%20Code%20%7C%20Codex-0F172A">
   <img alt="Any language" src="https://img.shields.io/badge/replies-any%20language-F59E0B">
 </p>
@@ -34,6 +34,11 @@
 Coding agents bury the one thing you need: what failed, what needs your OK, what is still running.
 This plugin gives every reply the same shape. Facts come first, one per line.
 A one-sentence conclusion and nine numbered sections close the reply. Your eye learns where to look.
+
+## Goals
+
+The project's `.ihav_space/ihav-asd-ste100/goals.md` is the full list behind section 0. Every Admin-Zone lists every L goal with its estimated percent and bar, then G/B; untouched goals stay visible. Only the user sets, changes or retires L goals; agent additions remain proposed. Each estimate has a basis, each L has its last real-work day, and three-day stalls get a cheapest next step. After a context summary, read this register rather than remembered subsets.
+Type `g` for Goals alone. The shared hook adds complete IDs and bounded estimate previews; it never changes the register. [Goals rules](skills/ihav-asd-ste100/references/goals.md) define the shape and limits. `python3 scripts/check_reply.py reply.md --goals-register /path/to/goals.md` checks all-L coverage in Admin-Zone; it does not prove progress or model compliance.
 
 ## Open items
 
@@ -293,7 +298,7 @@ Both are MIT. They agree on more than they differ; pick the one that matches you
 2. **Every prompt:** one reminder line keeps long sessions from drifting.
 3. **Your words win:** `stop ste mode` pauses it for the session; `ste mode` resumes it.
 4. **Exact output wins:** code-only, JSON-only and single-command requests are never wrapped.
-5. **Safe by design:** the hooks never block a session, make no network call, and stay silent on any error.
+5. **Safe by design:** the hooks never block a session or make a network call. Register problems may add one warning; unexpected hook errors stay silent.
 6. **Short way to the Admin-Zone:** type `az` or `adminzone`. For a `/az` slash command, run `node <plugin folder>/scripts/install-az.mjs` once; it never overwrites another `az` skill. The Compass has the same shortcut: `x` or `compass`, and `scripts/install-x.mjs` for `/x`.
 7. **Audit every room:** `python3 scripts/audit_sessions.py` checks the latest full reply of each session from the last two hours. It only reads transcripts.
 8. **New releases reach open sessions:** `hooks/ste-mode.mjs` is a stable launcher. It uses the checked protocol-1 pointer in `~/.ihav/active/ihav-asd-ste100.json`. Updated hosts resolve its version in their own ihav cache when the recorded root belongs to another host; old launchers still understand the root. Run `node scripts/activate.mjs --all-hosts` from a release checkout to copy into every installed host cache, smoke-check both, then activate. A missing host stays uninstalled. Same-version cache copies are preserved as `.before-*` backups. A failed smoke leaves caches and pointer unchanged; peers report `not activated` when the transaction stops. Forward activation requires JSON prompt context. `--all-hosts --rollback` copies the retained previous release back into both caches; a recognized legacy reminder warns that Codex loses prompt context. Native bootstrap, hook trust and the old-launcher limit are in [Updating](INSTALL.md#updating). For an already installed single-host release, `--root DIR`, `--rollback` and `--status` keep their existing JSON output.
@@ -301,6 +306,8 @@ Both are MIT. They agree on more than they differ; pick the one that matches you
 ## Cost
 
 About 1,900 tokens at session start and about 90 tokens per prompt. A project with a Compass file adds about 90 tokens of intro and rule text and about 17 tokens per active line to every prompt. Run `claude plugin details ihav-asd-ste100` for your setup.
+
+These base estimates exclude optional Open items and Goals blocks, capped independently at 1,536 and 2,048 UTF-8 bytes. One measured project with 25 L goals and 179 open items used 7,189 bytes of ordinary prompt context across all three blocks, up from 5,975 before Goals. Bytes are not token counts.
 
 <a name="faq"></a>
 
